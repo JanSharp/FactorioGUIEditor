@@ -1,3 +1,5 @@
 
 mods/*
 !mods/gui-editor
+!mods/minimal-no-base-mod
+!mods/JanSharpDevEnv

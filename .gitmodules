@@ -1,0 +1,6 @@
+[submodule "mods/minimal-no-base-mod"]
+	path = mods/minimal-no-base-mod
+	url = https://github.com/Bilka2/minimal-no-base-mod.git
+[submodule "mods/JanSharpDevEnv"]
+	path = mods/JanSharpDevEnv
+	url = https://github.com/JanSharp/JanSharpDevEnv.git

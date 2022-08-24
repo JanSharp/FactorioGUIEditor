@@ -9,9 +9,9 @@
       "request": "launch",
       "name": "Factorio Mod Debug",
       "factorioArgs": [
-        "--load-scenario", "base/freeplay",
+        // "--load-scenario", "base/freeplay",
         // "--load-scenario", "JanSharpDevEnv/Base",
-        // "--load-scenario", "JanSharpDevEnv/NoBase",
+        "--load-scenario", "JanSharpDevEnv/NoBase",
         "--window-size", "1280x720",
         // "--disable-prototype-history",
         // "--load-game", "temp",
@@ -20,9 +20,9 @@
       "allowDisableBaseMod": true,
       "disableExtraMods": true,
       "adjustMods": {
-        "base": true,
-        // "minimal-no-base-mod": true,
-        // "JanSharpDevEnv": true,
+        // "base": true,
+        "minimal-no-base-mod": true,
+        "JanSharpDevEnv": true,
         "gui-editor": true,
       },
 

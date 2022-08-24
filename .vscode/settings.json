@@ -2,6 +2,18 @@
   "cSpell.words": [
     "factorio"
   ],
+  "cSpell.ignorePaths": [
+    // default:
+    "package-lock.json",
+    "node_modules",
+    "vscode-extension",
+    ".git/objects",
+    ".vscode",
+    ".vscode-insiders",
+    // custom:
+    "mods/minimal-no-base-mod",
+    "mods/JanSharpDevEnv",
+  ],
   "Lua.diagnostics.globals": [
     "mods",
     "table_size",
