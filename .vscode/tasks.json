@@ -1,0 +1,62 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build launcher",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "${workspaceFolder}/gui-editor-launcher/gui-editor-launcher.csproj",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary",
+      ],
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "clear": false,
+      },
+    },
+    {
+      "label": "publish launcher",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "publish",
+        "${workspaceFolder}/gui-editor-launcher/gui-editor-launcher.csproj",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary",
+      ],
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "clear": false,
+      },
+    },
+    {
+      "label": "watch launcher",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "watch",
+        "run",
+        "--project",
+        "${workspaceFolder}/gui-editor-launcher/gui-editor-launcher.csproj"
+      ],
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "clear": false,
+      },
+    },
+  ],
+}
