@@ -13,6 +13,8 @@
     // custom:
     "mods/minimal-no-base-mod",
     "mods/JanSharpDevEnv",
+    "LICENSE.txt",
+    "LICENSE_THIRD_PARTY.txt",
   ],
   "Lua.diagnostics.globals": [
     "mods",
