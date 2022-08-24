@@ -1,15 +1,45 @@
 
-script.on_init(function()
-  global.players = {}
-end)
+local gui_elem_types = {
+  "button",
+  "sprite-button",
+  "checkbox",
+  "flow",
+  "frame",
+  "label",
+  "line",
+  "progressbar",
+  "table",
+  "textfield",
+  "radiobutton",
+  "sprite",
+  "scroll-pane",
+  "drop-down",
+  "list-box",
+  "camera",
+  "choose-elem-button",
+  "text-box",
+  "slider",
+  "minimap",
+  "entity-preview",
+  "empty-widget",
+  "tabbed-pane",
+  "tab",
+  "switch",
+}
 
 ---@return PlayerData
 local function get_player(event)
   return global.players[event.player_index]
 end
 
+---@class GlobalData
+---@field players table<integer, PlayerData>
+---@field restart_tick integer?
+
 ---@class PlayerData
 ---@field player LuaPlayer
+---@field hierarchy_window_elem LuaGuiElement
+---@field inspector_window_elem LuaGuiElement
 ---@field hierarchy_elem LuaGuiElement
 ---@field roots Node[]
 ---@field selected_node Node?
@@ -209,39 +239,13 @@ function update_hierarchy(player)
     type = "empty-widget",
     style_mods = {
       horizontally_stretchable = true,
-      height = 550,
+      height = 400,
     },
-    events = {on_deselect_widget_click},
+    elem_mods = {
+      ignored_by_interaction = true,
+    },
   })
 end
-
-local gui_elem_types = {
-  "button",
-  "sprite-button",
-  "checkbox",
-  "flow",
-  "frame",
-  "label",
-  "line",
-  "progressbar",
-  "table",
-  "textfield",
-  "radiobutton",
-  "sprite",
-  "scroll-pane",
-  "drop-down",
-  "list-box",
-  "camera",
-  "choose-elem-button",
-  "text-box",
-  "slider",
-  "minimap",
-  "entity-preview",
-  "empty-widget",
-  "tabbed-pane",
-  "tab",
-  "switch",
-}
 
 ---@param player PlayerData
 ---@param _ any
@@ -292,6 +296,26 @@ script.on_event(defines.events.on_tick, function(event)
   end
 end)
 
+---@param player PlayerData
+local function update_window_sizes(player)
+  local resolution = player.player.display_resolution
+  local height = resolution.height
+  player.inspector_window_elem.style.height = height
+  player.hierarchy_window_elem.style.height = height
+  local inspector_width = math.floor(resolution.width * 0.3)
+  player.inspector_window_elem.style.width = inspector_width
+  player.inspector_window_elem.location = {resolution.width - inspector_width, 0}
+  local hierarchy_width = math.floor((inspector_width / 0.3) * 0.2)
+  player.hierarchy_window_elem.style.width = hierarchy_width
+  player.hierarchy_window_elem.location = {resolution.width - inspector_width - hierarchy_width, 0}
+end
+
+script.on_event(defines.events.on_player_display_resolution_changed, function(event)
+  local player = get_player(event)
+  if not player then return end
+  update_window_sizes(player)
+end)
+
 script.on_event(defines.events.on_player_created, function(event)
   local player = game.get_player(event.player_index)
   local gvs = player.game_view_settings
@@ -307,17 +331,10 @@ script.on_event(defines.events.on_player_created, function(event)
   gvs.show_quickbar = false
   gvs.show_shortcut_bar = false
 
-  local frame, inner = create_elem(player.gui.screen, {
+  local hierarchy_window_elem, inner = create_elem(player.gui.screen, {
     type = "frame",
     direction = "vertical",
-    caption = "GUI Editor",
-    style_mods = {
-      width = 300,
-      height = 600,
-    },
-    elem_mods = {
-      auto_center = true,
-    },
+    caption = "Hierarchy",
     children = {
       {
         type = "frame",
@@ -378,6 +395,7 @@ script.on_event(defines.events.on_player_created, function(event)
                     type = "flow",
                     direction = "vertical",
                     name = "hierarchy",
+                    events = {on_deselect_widget_click},
                   },
                 },
               },
@@ -389,14 +407,41 @@ script.on_event(defines.events.on_player_created, function(event)
   })
   ---@cast inner -?
 
-  global.players[event.player_index] = {
+  local inspector_window_elem = create_elem(player.gui.screen, {
+    type = "frame",
+    direction = "horizontal",
+    caption = "Inspector",
+    children = {
+      {
+        type = "frame",
+        direction = "vertical",
+        style = "inside_shallow_frame",
+        style_mods = {
+          horizontally_stretchable = true,
+          vertically_stretchable = true,
+        },
+      },
+    },
+  })
+
+  ---@type PlayerData
+  local player_data = {
     player = player,
+    hierarchy_window_elem = hierarchy_window_elem,
+    inspector_window_elem = inspector_window_elem,
     roots = {},
     hierarchy_elem = inner.hierarchy,
     selected_node = nil,
     nodes_by_id = {},
     next_node_id = 0,
   }
+  global.players[event.player_index] = player_data
+  update_window_sizes(player_data)
+end)
+
+script.on_init(function()
+  global.players = {}
+  game.tick_paused = true
 end)
 
 for name, id in pairs(defines.events) do
