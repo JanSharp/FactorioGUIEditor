@@ -1,6 +1,11 @@
 {
   "cSpell.words": [
-    "factorio"
+    "elems",
+    "factorio",
+    "progressbar",
+    "quickbar",
+    "radiobutton",
+    "visualisation"
   ],
   "cSpell.ignorePaths": [
     // default:
@@ -15,6 +20,11 @@
     "mods/JanSharpDevEnv",
     "LICENSE.txt",
     "LICENSE_THIRD_PARTY.txt",
+  ],
+  "Lua.workspace.ignoreDir": [
+    ".vscode",
+    "mods/minimal-no-base-mod",
+    "mods/JanSharpDevEnv",
   ],
   "Lua.diagnostics.globals": [
     "mods",
