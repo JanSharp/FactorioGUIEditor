@@ -1,0 +1,38 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "factoriomod",
+      "request": "launch",
+      "name": "Factorio Mod Debug",
+      "factorioArgs": [
+        "--load-scenario", "base/freeplay",
+        // "--load-scenario", "JanSharpDevEnv/Base",
+        // "--load-scenario", "JanSharpDevEnv/NoBase",
+        "--window-size", "1280x720",
+        // "--disable-prototype-history",
+        // "--load-game", "temp",
+      ],
+      "modsPath": "~/dev/FactorioGUIEditor/mods",
+      "allowDisableBaseMod": true,
+      "disableExtraMods": true,
+      "adjustMods": {
+        "base": true,
+        // "minimal-no-base-mod": true,
+        // "JanSharpDevEnv": true,
+        "gui-editor": true,
+      },
+
+      // "hookSettings": true,
+      // "hookData": true,
+
+      // "hookMode": "profile",
+      "profileSlowStart": 0,
+      "profileUpdateRate": 1,
+      // "profileLines": false,
+    },
+  ],
+}
