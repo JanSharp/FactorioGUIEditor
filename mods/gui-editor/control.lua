@@ -41,6 +41,7 @@ end
 ---@field hierarchy_window_elem LuaGuiElement
 ---@field inspector_window_elem LuaGuiElement
 ---@field hierarchy_elem LuaGuiElement
+---@field inspector_elem LuaGuiElement
 ---@field roots Node[]
 ---@field selected_node Node?
 ---@field nodes_by_id table<integer, Node>
@@ -55,9 +56,10 @@ end
 ---@class Node
 ---@field id integer @ per player unique id
 ---@field parent Node?
----@field name string
+---@field node_name string
 ---@field children Node[]
 ---@field elem LuaGuiElement
+---@field hierarchy_label LuaGuiElement
 
 ---@class NodeLuaGuiElement.add_param : LuaGuiElement.add_param
 ---@field node_name string
@@ -167,7 +169,7 @@ local function create_node_internal(player, parent_elem, args)
   player.next_node_id = id + 1
   local node = {
     id = id,
-    name = args.node_name,
+    node_name = args.node_name,
     elem = elem,
     children = {},
   }
@@ -187,6 +189,7 @@ local function create_node(player, parent_node, args)
 end
 
 local update_hierarchy
+local update_inspector
 
 ---@param player PlayerData
 ---@param node Node?
@@ -194,6 +197,7 @@ local function set_selected_node(player, node)
   if player.selected_node == node then return end
   player.selected_node = node
   update_hierarchy(player)
+  update_inspector(player)
 end
 
 ---@param player PlayerData
@@ -207,6 +211,13 @@ local on_deselect_widget_click = register_handler(defines.events.on_gui_click, "
 end)
 
 ---@param player PlayerData
+---@param node Node
+---@return string
+local function get_hierarchy_label_caption(player, node)
+  return node == player.selected_node and ("[font=default-bold]"..node.node_name.."[/font]") or node.node_name
+end
+
+---@param player PlayerData
 function update_hierarchy(player)
   for _, child in pairs(player.hierarchy_elem.children) do
     child.destroy()
@@ -214,20 +225,22 @@ function update_hierarchy(player)
   ---@param node Node
   ---@param depth integer
   local function create_row(node, depth)
-    local is_selected = node == player.selected_node
-    create_elem(player.hierarchy_elem, {
+    local _, inner = create_elem(player.hierarchy_elem, {
       type = "flow",
       direction = "horizontal",
       style_mods = {padding = 0, margin = 0, left_padding = depth * 8},
       children = {
         {
           type = "label",
-          caption = is_selected and ("[font=default-bold]"..node.name.."[/font]") or node.name,
+          name = "label",
+          caption = get_hierarchy_label_caption(player, node),
           tags = {node_id = node.id},
           events = {on_hierarchy_row_click},
         },
       },
     })
+    ---@cast inner -?
+    node.hierarchy_label = inner.label
     for _, child in pairs(node.children) do
       create_row(child, depth + 1)
     end
@@ -245,6 +258,137 @@ function update_hierarchy(player)
       ignored_by_interaction = true,
     },
   })
+end
+
+---@param player PlayerData
+local on_inspector_name_text_changed = register_handler(defines.events.on_gui_text_changed, "on_inspector_name_text_changed", function(player, _, event)
+  player.selected_node.node_name = event.element.text
+  player.selected_node.hierarchy_label.caption = get_hierarchy_label_caption(player, player.selected_node)
+end)
+
+---@param player PlayerData
+---@param tags any
+---@param checkbox_elem LuaGuiElement
+local function on_boolean_editor_state_changed_internal(player, tags, checkbox_elem)
+  ---@diagnostic disable-next-line: assign-type-mismatch
+  player.nodes_by_id[tags.node_id].elem[tags.field_name] = checkbox_elem.state
+end
+
+---@param player PlayerData
+---@param event EventData.on_gui_click
+local on_boolean_editor_label_click = register_handler(defines.events.on_gui_click, "on_boolean_editor_label_click", function(player, _, event)
+  local checkbox_elem = event.element.parent.checkbox
+  checkbox_elem.state = not checkbox_elem.state
+  on_boolean_editor_state_changed_internal(player, checkbox_elem.tags.__gui_editor, checkbox_elem)
+end)
+
+---@param player PlayerData
+---@param tags any
+---@param event EventData.on_gui_checked_state_changed
+local on_boolean_editor_state_changed = register_handler(defines.events.on_gui_checked_state_changed, "on_boolean_editor_state_changed", function(player, tags, event)
+  on_boolean_editor_state_changed_internal(player, tags, event.element)
+end)
+
+---@param inspector LuaGuiElement
+---@param node Node
+---@param field_name string
+local function boolean_editor(inspector, node, field_name)
+  local success, value = pcall(function() return node.elem[field_name] end)
+  ---@diagnostic disable-next-line: cast-type-mismatch
+  ---@cast value boolean
+  if not success then return end
+
+  create_elem(inspector, {
+    type = "flow",
+    direction = "horizontal",
+    children = {
+      {
+        type = "label",
+        caption = field_name,
+        events = {on_boolean_editor_label_click},
+      },
+      {
+        type = "empty-widget",
+        style_mods = {horizontally_stretchable = true},
+      },
+      {
+        type = "checkbox",
+        name = "checkbox",
+        state = value,
+        tags = {
+          node_id = node.id,
+          field_name = field_name,
+        },
+        events = {on_boolean_editor_state_changed},
+      },
+    },
+  })
+end
+
+---@param player PlayerData
+---@param tags any
+---@param event EventData.on_gui_text_changed
+local on_string_editor_state_changed = register_handler(defines.events.on_gui_text_changed, "on_string_editor_state_changed", function(player, tags, event)
+  ---@diagnostic disable-next-line: assign-type-mismatch
+  player.nodes_by_id[tags.node_id].elem[tags.field_name] = event.element.text
+end)
+
+---@param inspector LuaGuiElement
+---@param node Node
+---@param field_name string
+local function string_editor(inspector, node, field_name)
+  local success, value = pcall(function() return node.elem[field_name] end)
+  ---@diagnostic disable-next-line: cast-type-mismatch
+  ---@cast value string
+  if not success then return end
+
+  create_elem(inspector, {
+    type = "flow",
+    direction = "horizontal",
+    children = {
+      {
+        type = "label",
+        caption = field_name,
+      },
+      {
+        type = "empty-widget",
+        style_mods = {horizontally_stretchable = true},
+      },
+      {
+        type = "textfield",
+        text = value,
+        tags = {
+          node_id = node.id,
+          field_name = field_name,
+        },
+        events = {on_string_editor_state_changed},
+      },
+    },
+  })
+end
+
+---@param player PlayerData
+function update_inspector(player)
+  local inspector = player.inspector_elem
+  for _, child in pairs(inspector.children) do
+    child.destroy()
+  end
+  local node = player.selected_node
+  if not node then return end
+  create_elem(inspector, {
+    type = "textfield",
+    text = node.node_name,
+    -- didn't do anything for some reason
+    -- style_mods = {
+    --   horizontally_stretchable = true,
+    -- },
+    events = {on_inspector_name_text_changed},
+  })
+  string_editor(inspector, node, "caption")
+  boolean_editor(inspector, node, "enabled")
+  boolean_editor(inspector, node, "visible")
+  boolean_editor(inspector, node, "ignored_by_interaction")
+  string_editor(inspector, node, "text")
 end
 
 ---@param player PlayerData
@@ -331,7 +475,7 @@ script.on_event(defines.events.on_player_created, function(event)
   gvs.show_quickbar = false
   gvs.show_shortcut_bar = false
 
-  local hierarchy_window_elem, inner = create_elem(player.gui.screen, {
+  local hierarchy_window_elem, hierarchy_inner = create_elem(player.gui.screen, {
     type = "frame",
     direction = "vertical",
     caption = "Hierarchy",
@@ -395,6 +539,9 @@ script.on_event(defines.events.on_player_created, function(event)
                     type = "flow",
                     direction = "vertical",
                     name = "hierarchy",
+                    style_mods = {
+                      vertical_spacing = 0,
+                    },
                     events = {on_deselect_widget_click},
                   },
                 },
@@ -405,9 +552,9 @@ script.on_event(defines.events.on_player_created, function(event)
       },
     },
   })
-  ---@cast inner -?
+  ---@cast hierarchy_inner -?
 
-  local inspector_window_elem = create_elem(player.gui.screen, {
+  local inspector_window_elem, inspector_inner = create_elem(player.gui.screen, {
     type = "frame",
     direction = "horizontal",
     caption = "Inspector",
@@ -415,14 +562,17 @@ script.on_event(defines.events.on_player_created, function(event)
       {
         type = "frame",
         direction = "vertical",
+        name = "inspector",
         style = "inside_shallow_frame",
         style_mods = {
           horizontally_stretchable = true,
           vertically_stretchable = true,
+          padding = 4,
         },
       },
     },
   })
+  ---@cast inspector_inner -?
 
   ---@type PlayerData
   local player_data = {
@@ -430,7 +580,8 @@ script.on_event(defines.events.on_player_created, function(event)
     hierarchy_window_elem = hierarchy_window_elem,
     inspector_window_elem = inspector_window_elem,
     roots = {},
-    hierarchy_elem = inner.hierarchy,
+    hierarchy_elem = hierarchy_inner.hierarchy,
+    inspector_elem = inspector_inner.inspector,
     selected_node = nil,
     nodes_by_id = {},
     next_node_id = 0,
