@@ -100,6 +100,11 @@ local function create_hierarchy(player)
           {
             type = "flow",
             direction = "horizontal",
+            style_mods = {
+              top_padding = 8,
+              left_padding = 8,
+              right_padding = 8,
+            },
             children = {
               {
                 type = "drop-down",
@@ -109,7 +114,7 @@ local function create_hierarchy(player)
                 children = {
                   {
                     type = "label",
-                    caption = "[color=#000000]Create new ...[/color]",
+                    caption = "[color=#000000][font=default-semibold]Create new ...[/font][/color]",
                     elem_mods = {ignored_by_interaction = true},
                   },
                 },
@@ -117,6 +122,10 @@ local function create_hierarchy(player)
               {
                 type = "sprite-button",
                 sprite = "restart_required",
+                style_mods = {
+                  width = 28,
+                  height = 28,
+                },
                 tooltip = {"gui.restart"},
                 events = {on_restart_click},
               },
