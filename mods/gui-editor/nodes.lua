@@ -38,6 +38,8 @@ local function create_node_internal(player, parent_elem, type, node_name)
   local node = {
     id = id,
     node_name = node_name,
+    -- set in update_hierarchy
+    -- flat_index = nil,
     elem = elem,
     elem_data = elem_data,
     children = {},
@@ -59,12 +61,64 @@ local function create_node(player, parent_node, type, node_name)
 end
 
 ---@param player PlayerData
----@param node Node?
-local function set_selected_node(player, node)
-  if player.selected_node == node then return end
-  player.selected_node = node
-  hierarchy.update_hierarchy(player)
-  inspector.update_inspector(player)
+local function clear_cursors(player)
+  if not next(player.cursor_nodes) then return end
+  player.dirty_selection = true
+  util.clear_table(player.cursor_nodes)
+end
+
+---@param player PlayerData
+local function clear_selection(player)
+  if not next(player.selected_nodes) and not next(player.cursor_nodes) then return end
+  player.dirty_selection = true
+  util.clear_table(player.selected_nodes)
+  util.clear_table(player.cursor_nodes)
+end
+
+---@param player PlayerData
+---@param node Node
+local function add_cursor_node(player, node)
+  if player.cursor_nodes[node] then return end
+  player.dirty_selection = true
+  player.selected_nodes[node] = true
+  player.cursor_nodes[node] = true
+end
+
+---@param player PlayerData
+---@param node Node
+local function add_selected_node(player, node)
+  if player.selected_nodes[node] then return end
+  player.dirty_selection = true
+  player.selected_nodes[node] = true
+end
+
+---@param player PlayerData
+---@param node Node
+local function remove_cursor_node(player, node)
+  if not player.cursor_nodes[node] then return end
+  player.dirty_selection = true
+  player.cursor_nodes[node] = nil
+end
+
+---@param player PlayerData
+---@param node Node
+local function remove_selected_node(player, node)
+  if not player.selected_nodes[node] then return end
+  player.dirty_selection = true
+  player.selected_nodes[node] = nil
+  player.cursor_nodes[node] = nil
+end
+
+---@param player PlayerData
+local function finish_changing_selection(player)
+  if player.dirty_selection then
+    if next(player.selected_nodes) and not next(player.cursor_nodes) then
+      error("Invalid selection: When there are selected nodes there must be at least one cursor node.")
+    end
+    hierarchy.update_hierarchy(player)
+    inspector.update_inspector(player)
+    player.dirty_selection = false
+  end
 end
 
 ---@param node Node
@@ -131,6 +185,12 @@ end
 return {
   create_node_internal = create_node_internal,
   create_node = create_node,
-  set_selected_node = set_selected_node,
+  clear_cursors = clear_cursors,
+  clear_selection = clear_selection,
+  add_cursor_node = add_cursor_node,
+  add_selected_node = add_selected_node,
+  remove_cursor_node = remove_cursor_node,
+  remove_selected_node = remove_selected_node,
+  finish_changing_selection = finish_changing_selection,
   rebuild_elem = rebuild_elem,
 }

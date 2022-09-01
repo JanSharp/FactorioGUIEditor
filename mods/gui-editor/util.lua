@@ -46,6 +46,21 @@ local function invert(tab)
   return lut
 end
 
+---@generic T
+---@param t T
+---@return T
+local function clear_table(t)
+  for k in pairs(t) do
+    -- removing while iterating, living life on the edge.
+    -- but since nothing happens after the removal and I'm
+    -- never going to step through this with the debugger,
+    -- there won't be any incremental GC between the assignment
+    -- of nil and the next `next` call
+    t[k] = nil
+  end
+  return t
+end
+
 -- numbers used to order these fields first in order
 local fields_for_all_classes = {
   ["index"] = -8,
@@ -163,4 +178,5 @@ return {
   fields_for_type = fields_for_type,
   get_player = get_player,
   invert = invert,
+  clear_table = clear_table,
 }

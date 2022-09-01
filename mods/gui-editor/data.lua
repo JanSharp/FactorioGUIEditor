@@ -66,3 +66,18 @@ styles.gui_editor_node_selected = {
     base = {position = {329 + 17 * 2 + 8, 47 + 8}, width = 1, height = 1},
   },
 }
+
+styles.gui_editor_node_cursor = {
+  type = "button_style",
+  parent = "gui_editor_node_normal",
+  default_graphical_set = {
+    base = {position = {431 + 17 * 0 + 8, 47 + 8}, width = 1, height = 1},
+  },
+  hovered_graphical_set = {
+    base = {position = {431 + 17 * 1 + 8, 47 + 8}, width = 1, height = 1},
+    -- glow = default_glow(default_glow_color, 0.5),
+  },
+  clicked_graphical_set = {
+    base = {position = {431 + 17 * 2 + 8, 47 + 8}, width = 1, height = 1},
+  },
+}

@@ -4,10 +4,12 @@ local gui = require("__gui-editor__.gui")
 local hierarchy = depends("__gui-editor__.hierarchy")
 local nodes = depends("__gui-editor__.nodes")
 
+-- TODO: support multi mode editing
+
 ---@param player PlayerData
 local on_inspector_name_text_changed = gui.register_handler(defines.events.on_gui_text_changed, "on_inspector_name_text_changed", function(player, _, event)
-  player.selected_node.node_name = event.element.text
-  player.selected_node.hierarchy_button.caption = event.element.text
+  next(player.cursor_nodes).node_name = event.element.text
+  next(player.cursor_nodes).hierarchy_button.caption = event.element.text
 end)
 
 ---@param player PlayerData
@@ -166,7 +168,7 @@ local function update_inspector(player)
   for _, child in pairs(inspector.children) do
     child.destroy()
   end
-  local node = player.selected_node
+  local node = next(player.cursor_nodes)
   if not node then return end
   gui.create_elem(inspector, {
     type = "textfield",
