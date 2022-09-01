@@ -38,10 +38,13 @@
     "localised_print",
     "serpent",
     "__DebugAdapter",
-    "__Profiler"
+    "__Profiler",
+    "global"
   ],
   "Lua.workspace.library": [
-    "/mnt/big/portable/factorio/doc-html/runtime-api-lua",
+    "/mnt/big/portable/factorio/data",
+    "/mnt/big/portable/factorio/data/core/lualib",
+    "/mnt/big/portable/factorio/doc-html/runtime-api-lua"
   ],
   "Lua.runtime.version": "Lua 5.2",
   "Lua.runtime.plugin": "/home/jmpc4/dev/FactorioSumnekoLuaPlugin/FactorioSumnekoLuaPlugin/plugin.lua",

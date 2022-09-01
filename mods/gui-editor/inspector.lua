@@ -38,9 +38,8 @@ local hardcoded_subclasses = {
     "sprite-button",
     "sprite",
   },
-  resize_to_sprite = { -- TODO: test because docs aren't clear if this is correct, at least for me
-    "sprite-button",
-    "sprite",
+  resize_to_sprite = {
+    "sprite", -- NOTE: maybe clarify that this is only for sprites and not sprite-buttons in the docs
   },
   clicked_sprite = {
     "sprite-button",
@@ -133,6 +132,7 @@ end
 ---@param event EventData.on_gui_click
 local on_boolean_editor_label_click = gui.register_handler(defines.events.on_gui_click, "on_boolean_editor_label_click", function(player, _, event)
   local checkbox_elem = event.element.parent.checkbox
+  ---@cast checkbox_elem -?
   checkbox_elem.state = not checkbox_elem.state
   on_boolean_editor_state_changed_internal(player, checkbox_elem.tags.__gui_editor, checkbox_elem)
 end)
