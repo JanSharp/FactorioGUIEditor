@@ -31,6 +31,8 @@
 ---@class NodeLuaGuiElement.add_param : LuaGuiElement.add_param
 ---@field node_name string
 
+---@class Field : ApiAttribute
+
 -- refer to https://lua-api.factorio.com/latest/json-docs.html
 
 ---@class ApiAttribute
