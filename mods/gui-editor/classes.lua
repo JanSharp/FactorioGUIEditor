@@ -27,7 +27,7 @@
 ---@field children Node[]
 ---@field elem LuaGuiElement
 ---@field elem_data LuaGuiElement @ isn't actually a LuaGuiElement, but has almost all of its fields
----@field hierarchy_label LuaGuiElement
+---@field hierarchy_button LuaGuiElement
 
 ---@class NodeLuaGuiElement.add_param : LuaGuiElement.add_param
 ---@field node_name string

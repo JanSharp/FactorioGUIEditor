@@ -10,13 +10,6 @@ local on_hierarchy_row_click = gui.register_handler(defines.events.on_gui_click,
 end)
 
 ---@param player PlayerData
----@param node Node
----@return string
-local function get_hierarchy_label_caption(player, node)
-  return node == player.selected_node and ("[font=default-bold]"..node.node_name.."[/font]") or node.node_name
-end
-
----@param player PlayerData
 local function update_hierarchy(player)
   for _, child in pairs(player.hierarchy_elem.children) do
     child.destroy()
@@ -30,16 +23,18 @@ local function update_hierarchy(player)
       style_mods = {padding = 0, margin = 0, left_padding = depth * 8},
       children = {
         {
-          type = "label",
-          name = "label",
-          caption = get_hierarchy_label_caption(player, node),
+          type = "button",
+          name = "button",
+          style = node == player.selected_node and "gui_editor_node_selected" or "gui_editor_node_normal",
+          caption = node.node_name,
+          style_mods = {horizontally_stretchable = true},
           tags = {node_id = node.id},
           events = {on_hierarchy_row_click},
         },
       },
     })
     ---@cast inner -?
-    node.hierarchy_label = inner.label
+    node.hierarchy_button = inner.button
     for _, child in pairs(node.children) do
       create_row(child, depth + 1)
     end
@@ -185,7 +180,6 @@ end
 
 ---@class __gui-editor__.hierarchy
 return {
-  get_hierarchy_label_caption = get_hierarchy_label_caption,
   update_hierarchy = update_hierarchy,
   create_hierarchy = create_hierarchy,
 }

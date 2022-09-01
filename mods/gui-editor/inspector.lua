@@ -7,7 +7,7 @@ local nodes = depends("__gui-editor__.nodes")
 ---@param player PlayerData
 local on_inspector_name_text_changed = gui.register_handler(defines.events.on_gui_text_changed, "on_inspector_name_text_changed", function(player, _, event)
   player.selected_node.node_name = event.element.text
-  player.selected_node.hierarchy_label.caption = hierarchy.get_hierarchy_label_caption(player, player.selected_node)
+  player.selected_node.hierarchy_button.caption = event.element.text
 end)
 
 ---@param player PlayerData
