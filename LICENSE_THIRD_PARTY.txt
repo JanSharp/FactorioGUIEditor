@@ -3,6 +3,7 @@
 applies to:
 - minimal-no-base-mod, Copyright (c) 2020 Erik Wellmann
 - JanSharpDevEnv, Copyright (c) 2020 Jan Mischak
+- json.lua, Copyright (c) 2020 rxi
 --------------------------------------------------------------------------------
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
