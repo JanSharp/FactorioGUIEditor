@@ -6,12 +6,23 @@ local inspector = depends("__gui-editor__.inspector")
 
 ---@param player PlayerData
 ---@param parent_elem LuaGuiElement
----@param args NodeLuaGuiElement.add_param
+---@param type string
+---@param node_name string
 ---@return Node
-local function create_node_internal(player, parent_elem, args)
+local function create_node_internal(player, parent_elem, type, node_name)
+  local args = {type = type}
+  if args.type == "table" then
+    args.column_count = 2
+  elseif args.type == "checkbox" or args.type == "radiobutton" then
+    args.state = false
+  elseif args.type == "camera" then
+    args.position = {0, 0}
+  elseif args.type == "choose-elem-button" then
+    args.elem_type = "item"
+  end
   local elem = parent_elem.add(args)
   local elem_data = {}
-  for _, field in pairs(util.fields_for_type[args.type]) do
+  for _, field in pairs(util.fields_for_type[type]) do
     if field.name == "mouse_button_filter" then
       local mouse_button_filter = {}
       elem_data.mouse_button_filter = mouse_button_filter
@@ -26,7 +37,7 @@ local function create_node_internal(player, parent_elem, args)
   player.next_node_id = id + 1
   local node = {
     id = id,
-    node_name = args.node_name,
+    node_name = node_name,
     elem = elem,
     elem_data = elem_data,
     children = {},
@@ -37,10 +48,11 @@ end
 
 ---@param player PlayerData
 ---@param parent_node Node
----@param args NodeLuaGuiElement.add_param
+---@param type string
+---@param node_name string
 ---@return Node
-local function create_node(player, parent_node, args)
-  local node = create_node_internal(player, parent_node.elem, args)
+local function create_node(player, parent_node, type, node_name)
+  local node = create_node_internal(player, parent_node.elem, type, node_name)
   node.parent = parent_node
   parent_node.children[#parent_node.children+1] = node
   return node
