@@ -1,4 +1,6 @@
 
+local util = require("__gui-editor__.util")
+local gui = require("__gui-editor__.gui")
 local hierarchy = depends("__gui-editor__.hierarchy")
 local inspector = depends("__gui-editor__.inspector")
 
@@ -8,12 +10,25 @@ local inspector = depends("__gui-editor__.inspector")
 ---@return Node
 local function create_node_internal(player, parent_elem, args)
   local elem = parent_elem.add(args)
+  local elem_data = {}
+  for _, field in pairs(util.fields_for_type[args.type]) do
+    if field.name == "mouse_button_filter" then
+      local mouse_button_filter = {}
+      elem_data.mouse_button_filter = mouse_button_filter
+      for filter in pairs(elem.mouse_button_filter) do
+        mouse_button_filter[#mouse_button_filter+1] = filter
+      end
+    else
+      elem_data[field.name] = elem[field.name]
+    end
+  end
   local id = player.next_node_id
   player.next_node_id = id + 1
   local node = {
     id = id,
     node_name = args.node_name,
     elem = elem,
+    elem_data = elem_data,
     children = {},
   }
   player.nodes_by_id[id] = node
@@ -40,9 +55,70 @@ local function set_selected_node(player, node)
   inspector.update_inspector(player)
 end
 
+---@param node Node
+---@param parent_elem LuaGuiElement
+local function rebuild_elem_internal(node, parent_elem)
+  local elem_data = node.elem_data
+  local args = {type = elem_data.type}
+
+  -- required, and some are read only after creation too
+  if args.type == "table" then
+    args.column_count = elem_data.column_count
+  elseif args.type == "checkbox" or args.type == "radiobutton" then
+    args.state = elem_data.state
+  elseif args.type == "camera" then
+    args.position = elem_data.position
+  elseif args.type == "choose-elem-button" then
+    args.elem_type = elem_data.elem_type
+  end
+
+  -- not required, but read only after creation
+  if args.type == "flow" or args.type == "frame" then
+    args.direction = elem_data.direction
+  end
+
+  local elem = gui.create_elem(parent_elem, args)
+
+  if node.elem.valid then
+    -- if the element still exists, retain index in parent and destroy the old element
+    -- this is only ever true for the root element of whichever node is being rebuilt
+    -- all children will be deleted by the time they are getting rebuilt
+    assert(elem.get_index_in_parent() == #parent_elem.children)
+    parent_elem.swap_children(node.elem.get_index_in_parent(), (#parent_elem.children)--[[@as uint]])
+    node.elem.destroy()
+  end
+  node.elem = elem
+  for _, field in pairs(util.fields_for_type[elem_data.type]) do
+    if node.parent then
+      -- non root nodes cannot have `auto_center`
+      if field.name == "auto_center" then
+        goto continue
+      end
+    else
+      -- root nodes cannot have `drag_target`
+      if field.name == "drag_target" then
+        goto continue
+      end
+    end
+    if field.write then
+      elem[field.name] = elem_data[field.name]
+    end
+    ::continue::
+  end
+  for _, child_node in pairs(node.children) do
+    rebuild_elem_internal(child_node, elem)
+  end
+end
+
+---@param node Node
+local function rebuild_elem(node)
+  rebuild_elem_internal(node, node.elem.parent)
+end
+
 ---@class __gui-editor__.nodes
 return {
   create_node_internal = create_node_internal,
   create_node = create_node,
   set_selected_node = set_selected_node,
+  rebuild_elem = rebuild_elem,
 }

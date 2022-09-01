@@ -78,7 +78,7 @@ local on_new_drop_down = gui.register_handler(defines.events.on_gui_selection_st
   elseif args.type == "camera" then
     args.position = {0, 0}
   elseif args.type == "choose-elem-button" then
-    args.elem_type= "item"
+    args.elem_type = "item"
   end
   if player.selected_node then
     node = nodes.create_node(player, player.selected_node, args)

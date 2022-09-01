@@ -30,6 +30,7 @@ end)
 
 script.on_event(defines.events.on_player_created, function(event)
   local player = game.get_player(event.player_index)
+  ---@cast player -?
   local gvs = player.game_view_settings
   gvs.show_controller_gui = false
   gvs.show_minimap = false
