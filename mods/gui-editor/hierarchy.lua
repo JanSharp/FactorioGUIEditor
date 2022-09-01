@@ -67,18 +67,14 @@ local on_new_drop_down = gui.register_handler(defines.events.on_gui_selection_st
   if index == 0 then return end
   event.element.selected_index = 0
   local node
+  local args = {
+    type = util.gui_elem_types[index],
+    node_name = util.gui_elem_types[index],
+  }
   if player.selected_node then
-    node = nodes.create_node(player, player.selected_node, {
-      type = util.gui_elem_types[index],
-      node_name = "child "..util.gui_elem_types[index],
-      caption = "child "..util.gui_elem_types[index],
-    })
+    node = nodes.create_node(player, player.selected_node, args)
   else
-    node = nodes.create_node_internal(player, player.player.gui.screen, {
-      type = util.gui_elem_types[index],
-      node_name = "root "..util.gui_elem_types[index],
-      caption = "root "..util.gui_elem_types[index],
-    })
+    node = nodes.create_node_internal(player, player.player.gui.screen, args)
     player.roots[#player.roots+1] = node
   end
   nodes.set_selected_node(player, node)
