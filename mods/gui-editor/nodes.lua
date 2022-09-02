@@ -163,14 +163,14 @@ local function rebuild_elem_internal(node, parent_elem)
   end
   node.elem = elem
   for _, field in pairs(util.fields_for_type[elem_data.type]) do
-    if node.parent then
-      -- non root nodes cannot have `auto_center`
-      if field.name == "auto_center" then
+    if node.parent.is_main then
+      -- root nodes cannot have `drag_target`
+      if field.name == "drag_target" then
         goto continue
       end
     else
-      -- root nodes cannot have `drag_target`
-      if field.name == "drag_target" then
+      -- non root nodes cannot have `auto_center`
+      if field.name == "auto_center" then
         goto continue
       end
     end
@@ -188,12 +188,15 @@ end
 
 ---@param node Node
 local function rebuild_elem(node)
-  rebuild_elem_internal(node, node.elem.parent)
+  rebuild_elem_internal(node, node.parent.elem)
 end
 
 ---@param player PlayerData
 ---@param node Node
 local function delete_node(player, node)
+  if node.is_main then
+    error("Attempt to delete the main node.")
+  end
   ---@param current_node Node
   local function delete_recursive(current_node)
     remove_selected_node(player, current_node)
@@ -206,14 +209,13 @@ local function delete_node(player, node)
     end
   end
   delete_recursive(node)
-  ll.remove(node.parent and node.parent.children or player.roots, node)
+  ll.remove(node.parent.children, node)
   ensure_valid_cursor(player)
   finish_changing_selection(player)
 end
 
 ---@class __gui-editor__.nodes
 return {
-  create_node_internal = create_node_internal,
   create_node = create_node,
   clear_cursors = clear_cursors,
   clear_selection = clear_selection,

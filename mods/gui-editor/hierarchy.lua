@@ -111,10 +111,10 @@ local function update_hierarchy(player)
       child_node = child_node.next
     end
   end
-  local root_node = player.roots.first
-  while root_node do
-    create_row(root_node, 0)
-    root_node = root_node.next
+  local main_node = player.main_node.children.first
+  while main_node do
+    create_row(main_node, 0)
+    main_node = main_node.next
   end
   gui.create_elem(player.hierarchy_elem, {
     type = "empty-widget",
@@ -149,8 +149,7 @@ local on_new_drop_down = gui.register_handler(defines.events.on_gui_selection_st
     nodes.finish_changing_selection(player)
   else
     -- no cursor nodes also means no selection
-    local node = nodes.create_node_internal(player, player.player.gui.screen, type, type)
-    ll.append(player.roots, node)
+    local node = nodes.create_node(player, player.main_node, type, type)
     nodes.add_cursor_node(player, node)
     nodes.finish_changing_selection(player)
   end
