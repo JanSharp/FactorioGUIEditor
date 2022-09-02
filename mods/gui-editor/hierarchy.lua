@@ -1,5 +1,6 @@
 
 local util = require("__gui-editor__.util")
+local ll = require("__gui-editor__.linked_list")
 local gui = require("__gui-editor__.gui")
 local nodes = depends("__gui-editor__.nodes")
 local restart_manager = require("__gui-editor__.restart_manager")
@@ -104,12 +105,16 @@ local function update_hierarchy(player)
     node.flat_index = flat_index
     flat_nodes[flat_index] = node
     flat_index = flat_index + 1
-    for _, child in pairs(node.children) do
-      create_row(child, depth + 1)
+    local child_node = node.children.first
+    while child_node do
+      create_row(child_node, depth + 1)
+      child_node = child_node.next
     end
   end
-  for _, root in pairs(player.roots) do
-    create_row(root, 0)
+  local root_node = player.roots.first
+  while root_node do
+    create_row(root_node, 0)
+    root_node = root_node.next
   end
   gui.create_elem(player.hierarchy_elem, {
     type = "empty-widget",
@@ -145,7 +150,7 @@ local on_new_drop_down = gui.register_handler(defines.events.on_gui_selection_st
   else
     -- no cursor nodes also means no selection
     local node = nodes.create_node_internal(player, player.player.gui.screen, type, type)
-    player.roots[#player.roots+1] = node
+    ll.append(player.roots, node)
     nodes.add_cursor_node(player, node)
     nodes.finish_changing_selection(player)
   end

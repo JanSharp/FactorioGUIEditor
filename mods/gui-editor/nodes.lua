@@ -1,5 +1,6 @@
 
 local util = require("__gui-editor__.util")
+local ll = require("__gui-editor__.linked_list")
 local gui = require("__gui-editor__.gui")
 local hierarchy = depends("__gui-editor__.hierarchy")
 local inspector = depends("__gui-editor__.inspector")
@@ -42,7 +43,7 @@ local function create_node_internal(player, parent_elem, type, node_name)
     -- flat_index = nil,
     elem = elem,
     elem_data = elem_data,
-    children = {},
+    children = ll.new_list(false),
   }
   player.nodes_by_id[id] = node
   return node
@@ -56,7 +57,7 @@ end
 local function create_node(player, parent_node, type, node_name)
   local node = create_node_internal(player, parent_node.elem, type, node_name)
   node.parent = parent_node
-  parent_node.children[#parent_node.children+1] = node
+  ll.append(parent_node.children, node)
   return node
 end
 
@@ -178,8 +179,10 @@ local function rebuild_elem_internal(node, parent_elem)
     end
     ::continue::
   end
-  for _, child_node in pairs(node.children) do
+  local child_node = node.children.first
+  while child_node do
     rebuild_elem_internal(child_node, elem)
+    child_node = child_node.next
   end
 end
 
@@ -196,27 +199,14 @@ local function delete_node(player, node)
     remove_selected_node(player, current_node)
     current_node.elem.destroy()
     current_node.deleted = true
-    for _, child_node in pairs(current_node.children) do
+    local child_node = current_node.children.first
+    while child_node do
       delete_recursive(child_node)
+      child_node = child_node.next
     end
   end
   delete_recursive(node)
-  -- FIXME: change to linked lists
-  if node.parent then
-    for i, child_node in pairs(node.parent.children) do
-      if child_node == node then
-        table.remove(node.parent.children, i)
-        break
-      end
-    end
-  else
-    for i, root_node in pairs(player.roots) do
-      if root_node == node then
-        table.remove(player.roots, i)
-        break
-      end
-    end
-  end
+  ll.remove(node.parent and node.parent.children or player.roots, node)
   ensure_valid_cursor(player)
   finish_changing_selection(player)
 end
