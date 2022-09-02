@@ -188,6 +188,39 @@ local function rebuild_elem(node)
   rebuild_elem_internal(node, node.elem.parent)
 end
 
+---@param player PlayerData
+---@param node Node
+local function delete_node(player, node)
+  ---@param current_node Node
+  local function delete_recursive(current_node)
+    remove_selected_node(player, current_node)
+    current_node.elem.destroy()
+    current_node.deleted = true
+    for _, child_node in pairs(current_node.children) do
+      delete_recursive(child_node)
+    end
+  end
+  delete_recursive(node)
+  -- FIXME: change to linked lists
+  if node.parent then
+    for i, child_node in pairs(node.parent.children) do
+      if child_node == node then
+        table.remove(node.parent.children, i)
+        break
+      end
+    end
+  else
+    for i, root_node in pairs(player.roots) do
+      if root_node == node then
+        table.remove(player.roots, i)
+        break
+      end
+    end
+  end
+  ensure_valid_cursor(player)
+  finish_changing_selection(player)
+end
+
 ---@class __gui-editor__.nodes
 return {
   create_node_internal = create_node_internal,
@@ -201,4 +234,5 @@ return {
   ensure_valid_cursor = ensure_valid_cursor,
   finish_changing_selection = finish_changing_selection,
   rebuild_elem = rebuild_elem,
+  delete_node = delete_node,
 }

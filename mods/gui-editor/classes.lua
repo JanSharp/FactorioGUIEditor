@@ -32,6 +32,7 @@
 ---@field elem LuaGuiElement
 ---@field elem_data LuaGuiElement @ isn't actually a LuaGuiElement, but has almost all of its fields
 ---@field hierarchy_button LuaGuiElement
+---@field deleted boolean? @ Deleted nodes should no longer be used anywhere, use this for cleanup
 
 ---@class NodeLuaGuiElement.add_param : LuaGuiElement.add_param
 ---@field node_name string

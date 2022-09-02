@@ -151,6 +151,15 @@ local on_new_drop_down = gui.register_handler(defines.events.on_gui_selection_st
   end
 end)
 
+---@param player PlayerData
+local on_delete_click = gui.register_handler(defines.events.on_gui_click, "on_delete_click", function(player)
+  while true do
+    local node = next(player.selected_nodes)
+    if not node then break end
+    nodes.delete_node(player, node)
+  end
+end)
+
 local on_restart_click = gui.register_handler(defines.events.on_gui_click, "on_restart_click", function(player)
   restart_manager.restart()
 end)
@@ -189,16 +198,36 @@ local function create_hierarchy(player)
               {
                 type = "drop-down",
                 items = util.gui_elem_types,
-                style_mods = {horizontally_stretchable = true},
+                style_mods = {
+                  horizontally_stretchable = true,
+                  top_padding = 1,
+                  bottom_padding = 0,
+                },
                 events = {on_new_drop_down},
                 children = {
                   {
                     type = "label",
-                    caption = "[color=#000000][font=default-semibold]Create new ...[/font][/color]",
+                    caption = "Create new ...",
+                    style_mods = {
+                      font = "default-semibold",
+                      font_color = {0, 0, 0},
+                    },
                     elem_mods = {ignored_by_interaction = true},
                   },
                 },
               },
+              -- NOTE: this button should be a context aware key bind
+              {
+                type = "sprite-button",
+                sprite = "utility/trash_white",
+                style_mods = {
+                  width = 28,
+                  height = 28,
+                },
+                tooltip = "Delete selected nodes and their children.",
+                events = {on_delete_click},
+              },
+              -- NOTE: this button should be somewhere else. Probably in the inspector for styles or something
               {
                 type = "sprite-button",
                 sprite = "restart_required",
