@@ -12,11 +12,11 @@ local function is_root(node)
 end
 
 ---@param player PlayerData
----@param parent_elem LuaGuiElement
+---@param parent_node Node
 ---@param type string
 ---@param node_name string
 ---@return Node
-local function create_node_internal(player, parent_elem, type, node_name)
+local function create_node(player, parent_node, type, node_name)
   local args = {type = type}
   if args.type == "table" then
     args.column_count = 2
@@ -27,7 +27,7 @@ local function create_node_internal(player, parent_elem, type, node_name)
   elseif args.type == "choose-elem-button" then
     args.elem_type = "item"
   end
-  local elem = parent_elem.add(args)
+  local elem = parent_node.elem.add(args)
   local elem_data = {}
   for _, field in pairs(util.fields_for_type[type]) do
     if field.name == "mouse_button_filter" then
@@ -52,16 +52,6 @@ local function create_node_internal(player, parent_elem, type, node_name)
     children = ll.new_list(false),
   }
   player.nodes_by_id[id] = node
-  return node
-end
-
----@param player PlayerData
----@param parent_node Node
----@param type string
----@param node_name string
----@return Node
-local function create_node(player, parent_node, type, node_name)
-  local node = create_node_internal(player, parent_node.elem, type, node_name)
   node.parent = parent_node
   ll.append(parent_node.children, node)
   return node
