@@ -5,6 +5,12 @@ local gui = require("__gui-editor__.gui")
 local hierarchy = depends("__gui-editor__.hierarchy")
 local inspector = depends("__gui-editor__.inspector")
 
+---@param node Node
+---@return boolean?
+local function is_root(node)
+  return not node.is_main and node.parent.is_main
+end
+
 ---@param player PlayerData
 ---@param parent_elem LuaGuiElement
 ---@param type string
@@ -163,7 +169,7 @@ local function rebuild_elem_internal(node, parent_elem)
   end
   node.elem = elem
   for _, field in pairs(util.fields_for_type[elem_data.type]) do
-    if node.parent.is_main then
+    if is_root(node) then
       -- root nodes cannot have `drag_target`
       if field.name == "drag_target" then
         goto continue
@@ -216,6 +222,7 @@ end
 
 ---@class __gui-editor__.nodes
 return {
+  is_root = is_root,
   create_node = create_node,
   clear_cursors = clear_cursors,
   clear_selection = clear_selection,

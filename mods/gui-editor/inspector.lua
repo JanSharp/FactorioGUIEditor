@@ -181,7 +181,7 @@ local function update_inspector(player)
   })
 
   for _, field in pairs(util.fields_for_type[node.elem.type]) do
-    if field.name == "auto_center" and not node.parent.is_main then
+    if field.name == "auto_center" and not nodes.is_root(node) then
       -- ignore auto_center for non root frames
       goto continue
     end
