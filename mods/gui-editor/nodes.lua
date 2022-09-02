@@ -196,6 +196,7 @@ local function delete_node(player, node)
   ---@param current_node Node
   local function delete_recursive(current_node)
     remove_selected_node(player, current_node)
+    player.nodes_by_id[current_node.id] = nil
     current_node.elem.destroy()
     current_node.deleted = true
     local child_node = current_node.children.first
