@@ -24,12 +24,27 @@ local on_hierarchy_row_click = gui.register_handler(defines.events.on_gui_click,
     if event.control and not event.shift and not event.alt then
       if player.selected_nodes[node] then
         nodes.remove_selected_node(player, node)
-        if next(player.selected_nodes) and not next(player.cursor_nodes) then
-          nodes.add_cursor_node(player, next(player.selected_nodes))
-        end
+        nodes.ensure_valid_cursor(player)
       else
         nodes.clear_cursors(player)
         nodes.add_cursor_node(player, node)
+      end
+    end
+    -- alt
+    if not event.control and not event.shift and event.alt then
+      if player.cursor_nodes[node] then
+        nodes.remove_cursor_node(player, node)
+        nodes.ensure_valid_cursor(player)
+      else
+        nodes.add_cursor_node(player, node)
+      end
+    end
+    -- shift + alt
+    if not event.control and event.shift and event.alt then
+      for cursor_node in pairs(player.cursor_nodes) do
+        for i = node.flat_index, cursor_node.flat_index, node.flat_index < cursor_node.flat_index and 1 or -1 do
+          nodes.add_cursor_node(player, player.flat_nodes[i])
+        end
       end
     end
     -- no modifiers
@@ -67,6 +82,8 @@ local function update_hierarchy(player)
             - no modifies: Select only this node.\n\z
             - ctrl: Add/Remove this node to/from the selection.\n\z
             - shift: Add all nodes from the last selected node up to this node.\n\z
+            - alt: Add this node to selection as another cursor.\n\z
+            - shift + alt: The same as shift, but makes all affected nodes cursors.\n\z
             \n\z
             right click:\n\z
             - ctrl: Move selected nodes [font=default-bold]below[/font] this node.\n\z

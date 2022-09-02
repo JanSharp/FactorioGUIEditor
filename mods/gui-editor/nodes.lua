@@ -110,6 +110,13 @@ local function remove_selected_node(player, node)
 end
 
 ---@param player PlayerData
+local function ensure_valid_cursor(player)
+  if next(player.selected_nodes) and not next(player.cursor_nodes) then
+    add_cursor_node(player, next(player.selected_nodes))
+  end
+end
+
+---@param player PlayerData
 local function finish_changing_selection(player)
   if player.dirty_selection then
     if next(player.selected_nodes) and not next(player.cursor_nodes) then
@@ -191,6 +198,7 @@ return {
   add_selected_node = add_selected_node,
   remove_cursor_node = remove_cursor_node,
   remove_selected_node = remove_selected_node,
+  ensure_valid_cursor = ensure_valid_cursor,
   finish_changing_selection = finish_changing_selection,
   rebuild_elem = rebuild_elem,
 }
