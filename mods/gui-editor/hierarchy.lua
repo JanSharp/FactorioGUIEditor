@@ -14,7 +14,8 @@ local on_hierarchy_row_click = gui.register_handler(defines.events.on_gui_click,
     -- shift
     if not event.control and event.shift and not event.alt then
       for cursor_node in pairs(player.cursor_nodes) do
-        for i = node.flat_index, cursor_node.flat_index, node.flat_index < cursor_node.flat_index and 1 or -1 do
+        local direction = node.flat_index < cursor_node.flat_index and 1 or -1
+        for i = node.flat_index + direction, cursor_node.flat_index - direction, direction do
           nodes.add_selected_node(player, player.flat_nodes[i])
         end
       end
@@ -43,9 +44,11 @@ local on_hierarchy_row_click = gui.register_handler(defines.events.on_gui_click,
     -- shift + alt
     if not event.control and event.shift and event.alt then
       for cursor_node in pairs(player.cursor_nodes) do
-        for i = node.flat_index, cursor_node.flat_index, node.flat_index < cursor_node.flat_index and 1 or -1 do
+        local direction = node.flat_index < cursor_node.flat_index and 1 or -1
+        for i = node.flat_index + direction, cursor_node.flat_index - direction, direction do
           nodes.add_cursor_node(player, player.flat_nodes[i])
         end
+        nodes.add_cursor_node(player, node)
       end
     end
     -- no modifiers
