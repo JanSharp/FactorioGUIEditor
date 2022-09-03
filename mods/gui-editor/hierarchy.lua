@@ -60,61 +60,70 @@ local on_hierarchy_row_click = gui.register_handler(defines.events.on_gui_click,
     end
     nodes.finish_changing_selection(player)
   elseif event.button == defines.mouse_button_type.right then
-    -- TODO: order selected nodes by their flat index. Applies to all 4 cases
-    -- NOTE: this needs special handling for when the clicked node is also a selected node
-
+    local new_parent
+    local prev_sibling
+    local next_sibling
+    local actually_do_something
     -- control
     if event.control and not event.shift and not event.alt then
-      for selected_node in pairs(player.selected_nodes) do
-        -- if it is neither one of the nodes that it would be moved between
-        -- and it isn't the parent of where it would be moved to
-        if selected_node ~= node and selected_node ~= node.next
-          and not nodes.is_child_of(node.parent, selected_node)
-        then
-          nodes.move_node(selected_node, node.parent, node)
-        end
-      end
+      new_parent = node.parent
+      prev_sibling = node
+      next_sibling = node.next
+      actually_do_something = true
     end
     -- control + shift
     if event.control and event.shift and not event.alt then
-      for selected_node in pairs(player.selected_nodes) do
-        -- if it is neither one of the nodes that it would be moved between
-        -- and it isn't the parent of where it would be moved to
-        if selected_node ~= node and selected_node ~= node.prev
-          and not nodes.is_child_of(node.parent, selected_node)
-        then
-          nodes.move_node(selected_node, node.parent, node.prev)
-        end
-      end
+      new_parent = node.parent
+      prev_sibling = node.prev
+      next_sibling = node
+      actually_do_something = true
     end
     -- control + alt
     if event.control and not event.shift and event.alt then
-      for selected_node in pairs(player.selected_nodes) do
-        -- if it isn't already the last child
-        -- and it isn't the parent of where it would be moved to
-        if selected_node ~= node.children.last
-          and not nodes.is_child_of(node, selected_node)
-        then
-          nodes.move_node(selected_node, node, node.children.last)
-        end
-      end
+      new_parent = node
+      prev_sibling = node.children.last
+      next_sibling = nil
+      actually_do_something = true
     end
     -- control + shift + alt
     if event.control and event.shift and event.alt then
+      new_parent = node
+      prev_sibling = nil
+      next_sibling = node.children.first
+      actually_do_something = true
+    end
+
+    if actually_do_something then
+      while player.selected_nodes[prev_sibling] do
+        ---@cast prev_sibling -?
+        prev_sibling = prev_sibling.prev
+      end
+
+      local selected_list = {}
       for selected_node in pairs(player.selected_nodes) do
-        -- if it isn't already the first child
-        -- and it isn't the parent of where it would be moved to
-        if selected_node ~= node.children.first
-          and not nodes.is_child_of(node, selected_node)
-        then
-          nodes.move_node(selected_node, node, nil)
+        selected_list[#selected_list+1] = selected_node
+      end
+      table.sort(selected_list, function(left, right)
+        return left.flat_index < right.flat_index
+      end)
+
+      for _, selected_node in pairs(selected_list) do
+        if selected_node == next_sibling then
+          -- already in the correct place, just move on
+          prev_sibling = selected_node
+          next_sibling = selected_node.next
+        elseif not nodes.is_child_of(new_parent, selected_node) then
+          nodes.move_node(selected_node, new_parent, prev_sibling)
+          prev_sibling = selected_node
+          next_sibling = selected_node.next
         end
       end
+
+      -- TODO: only update if it is dirty
+      update_hierarchy(player)
+      -- TODO: only update inspector if the "is_root" state changed of any node.
+      inspector.update_inspector(player)
     end
-    -- TODO: only update if it is dirty
-    update_hierarchy(player)
-    -- TODO: only update inspector if the "is_root" state changed of any node.
-    inspector.update_inspector(player)
   end
 end)
 
