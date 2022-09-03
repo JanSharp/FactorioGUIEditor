@@ -224,7 +224,8 @@ end
 
 ---@param player PlayerData
 ---@param node Node
-local function delete_node(player, node)
+---@param leave_dirty boolean? @ When `false` make sure to call `ensure_valid_cursor` and `finish_changing_selection` afterwards
+local function delete_node(player, node, leave_dirty)
   if node.is_main then
     error("Attempt to delete the main node.")
   end
@@ -242,8 +243,10 @@ local function delete_node(player, node)
   end
   delete_recursive(node)
   ll.remove(node.parent.children, node)
-  ensure_valid_cursor(player)
-  finish_changing_selection(player)
+  if not leave_dirty then
+    ensure_valid_cursor(player)
+    finish_changing_selection(player)
+  end
 end
 
 ---@class __gui-editor__.nodes

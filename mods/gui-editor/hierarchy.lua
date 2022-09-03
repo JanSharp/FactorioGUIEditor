@@ -219,8 +219,10 @@ local on_delete_click = gui.register_handler(defines.events.on_gui_click, "on_de
   while true do
     local node = next(player.selected_nodes)
     if not node then break end
-    nodes.delete_node(player, node)
+    nodes.delete_node(player, node, true)
   end
+  nodes.ensure_valid_cursor(player)
+  nodes.finish_changing_selection(player)
 end)
 
 local on_restart_click = gui.register_handler(defines.events.on_gui_click, "on_restart_click", function(player)
