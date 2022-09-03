@@ -1,9 +1,11 @@
 
 local util = require("__gui-editor__.util")
-local ll = require("__gui-editor__.linked_list")
 local gui = require("__gui-editor__.gui")
 local nodes = depends("__gui-editor__.nodes")
+local inspector = depends("__gui-editor__.inspector")
 local restart_manager = require("__gui-editor__.restart_manager")
+
+local update_hierarchy
 
 ---@param player PlayerData
 ---@param tags any
@@ -56,14 +58,68 @@ local on_hierarchy_row_click = gui.register_handler(defines.events.on_gui_click,
       nodes.clear_selection(player)
       nodes.add_cursor_node(player, node)
     end
+    nodes.finish_changing_selection(player)
   elseif event.button == defines.mouse_button_type.right then
-    -- TODO: move nodes
+    -- TODO: order selected nodes by their flat index. Applies to all 4 cases
+    -- NOTE: this needs special handling for when the clicked node is also a selected node
+
+    -- control
+    if event.control and not event.shift and not event.alt then
+      for selected_node in pairs(player.selected_nodes) do
+        -- if it is neither one of the nodes that it would be moved between
+        -- and it isn't the parent of where it would be moved to
+        if selected_node ~= node and selected_node ~= node.next
+          and not nodes.is_child_of(node.parent, selected_node)
+        then
+          nodes.move_node(selected_node, node.parent, node)
+        end
+      end
+    end
+    -- control + shift
+    if event.control and event.shift and not event.alt then
+      for selected_node in pairs(player.selected_nodes) do
+        -- if it is neither one of the nodes that it would be moved between
+        -- and it isn't the parent of where it would be moved to
+        if selected_node ~= node and selected_node ~= node.prev
+          and not nodes.is_child_of(node.parent, selected_node)
+        then
+          nodes.move_node(selected_node, node.parent, node.prev)
+        end
+      end
+    end
+    -- control + alt
+    if event.control and not event.shift and event.alt then
+      for selected_node in pairs(player.selected_nodes) do
+        -- if it isn't already the last child
+        -- and it isn't the parent of where it would be moved to
+        if selected_node ~= node.children.last
+          and not nodes.is_child_of(node, selected_node)
+        then
+          nodes.move_node(selected_node, node, node.children.last)
+        end
+      end
+    end
+    -- control + shift + alt
+    if event.control and event.shift and event.alt then
+      for selected_node in pairs(player.selected_nodes) do
+        -- if it isn't already the first child
+        -- and it isn't the parent of where it would be moved to
+        if selected_node ~= node.children.first
+          and not nodes.is_child_of(node, selected_node)
+        then
+          nodes.move_node(selected_node, node, nil)
+        end
+      end
+    end
+    -- TODO: only update if it is dirty
+    update_hierarchy(player)
+    -- TODO: only update inspector if the "is_root" state changed of any node.
+    inspector.update_inspector(player)
   end
-  nodes.finish_changing_selection(player)
 end)
 
 ---@param player PlayerData
-local function update_hierarchy(player)
+function update_hierarchy(player)
   for _, child in pairs(player.hierarchy_elem.children) do
     child.destroy()
   end

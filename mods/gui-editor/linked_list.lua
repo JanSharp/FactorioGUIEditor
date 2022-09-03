@@ -43,7 +43,11 @@ local function prepend(list, node)
   end
 end
 
+---Inserting after `nil` is like inserting after `list.first.prev`, so it prepends.
 local function insert_after(list, base_node, new_node)
+  if base_node == new_node then
+    error("Inserting a node after itself does not make sense.")
+  end
   if base_node then
     local next_node = base_node[list.next_key]
     base_node[list.next_key] = new_node
@@ -59,11 +63,15 @@ local function insert_after(list, base_node, new_node)
       list.alive_nodes[new_node] = true
     end
   else
-    append(list, new_node)
+    prepend(list, new_node)
   end
 end
 
+---Inserting before `nil` is like inserting before `list.last.next`, so it appends.
 local function insert_before(list, base_node, new_node)
+  if base_node == new_node then
+    error("Inserting a node before itself does not make sense.")
+  end
   if base_node then
     local prev_node = base_node[list.prev_key]
     new_node[list.next_key] = base_node
@@ -79,7 +87,7 @@ local function insert_before(list, base_node, new_node)
       list.alive_nodes[new_node] = true
     end
   else
-    prepend(list, new_node)
+    append(list, new_node)
   end
 end
 

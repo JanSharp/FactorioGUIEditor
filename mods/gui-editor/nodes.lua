@@ -11,6 +11,19 @@ local function is_root(node)
   return not node.is_main and node.parent.is_main
 end
 
+---Also returns true if `node == parent_node`
+---@param node Node
+---@param parent_node Node
+---@return boolean?
+local function is_child_of(node, parent_node)
+  while node do
+    if node == parent_node then
+      return true
+    end
+    node = node.parent
+  end
+end
+
 ---@param player PlayerData
 ---@param parent_node Node
 ---@param type string
@@ -171,6 +184,7 @@ local function rebuild_elem_internal(node, parent_elem)
       end
     end
     if field.write then
+      -- BUG: position for mini-maps is nil in elem_data? encountered when trying to move it
       elem[field.name] = elem_data[field.name]
     end
     ::continue::
@@ -185,6 +199,27 @@ end
 ---@param node Node
 local function rebuild_elem(node)
   rebuild_elem_internal(node, node.parent.elem)
+end
+
+---@param node Node
+---@param new_parent Node
+---@param prev_sibling Node? @ `nil` means "become the first child of the new_parent"
+local function move_node(node, new_parent, prev_sibling)
+  -- move the node before rebuilding it because rebuilding tests for a node being a root node
+  ll.remove(node.parent.children, node)
+  ll.insert_after(new_parent.children, prev_sibling, node)
+  node.parent = new_parent
+  node.elem.destroy() -- destroy before rebuild so it doesn't try to use the wrong index in parent
+  rebuild_elem_internal(node, new_parent.elem)
+  -- move the rebuilt element to the correct index in parent
+  local other_node = new_parent.children.last
+  local current_index = (#new_parent.elem.children)--[[@as uint]]
+  ---@cast other_node -?
+  while other_node ~= node do
+    new_parent.elem.swap_children(current_index - 1, current_index)
+    current_index = current_index - 1
+    other_node = other_node.prev
+  end
 end
 
 ---@param player PlayerData
@@ -214,6 +249,7 @@ end
 ---@class __gui-editor__.nodes
 return {
   is_root = is_root,
+  is_child_of = is_child_of,
   create_node = create_node,
   clear_cursors = clear_cursors,
   clear_selection = clear_selection,
@@ -224,5 +260,6 @@ return {
   ensure_valid_cursor = ensure_valid_cursor,
   finish_changing_selection = finish_changing_selection,
   rebuild_elem = rebuild_elem,
+  move_node = move_node,
   delete_node = delete_node,
 }
