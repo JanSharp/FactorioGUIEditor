@@ -30,6 +30,12 @@ local gui_elem_types = {
   "textfield",
 }
 
+local gui_elem_type_flags = {}
+for i, type in pairs(gui_elem_types) do
+  gui_elem_type_flags[type] = 2 ^ (i - 1)
+end
+local all_gui_elem_type_flags = (2 ^ (#gui_elem_types)) - 1
+
 ---@return PlayerData
 local function get_player(event)
   return global.players[event.player_index]
@@ -101,8 +107,13 @@ local hardcoded_subclasses = {
   clicked_sprite = {
     "sprite-button",
   },
+  ---cSpell:ignore listbox
+  items = {
+    "drop-down", -- NOTE: says `dropdown` and `listbox` in the description
+    "list-box",
+  },
   selected_index = {
-    "drop-down", -- NOTE: says `dropdown` in the description
+    "drop-down", -- NOTE: says `dropdown` and `listbox` in the description
     "list-box",
   },
   number = {
@@ -147,35 +158,48 @@ local ignored_fields = invert{
   "object_name",
 }
 
+---@type Field[]
+local all_used_fields = {}
+
 for _, field in pairs(fields) do
   if fields_for_all_classes[field.name] then
+    field.type_flags = all_gui_elem_type_flags
     for _, fields_list in pairs(fields_for_type) do
       fields_list[#fields_list+1] = field
     end
-    goto continue
+    goto done
   end
+
+  field.type_flags = 0
 
   if hardcoded_subclasses[field.name] or field.subclasses then
     for _, subclass in pairs(hardcoded_subclasses[field.name] or field.subclasses) do
       -- NOTE: fix docs for these 2
       subclass = ({["CheckBox"] = "checkbox", ["RadioButton"] = "radiobutton"})[subclass] or subclass
       fields_for_type[subclass][#fields_for_type[subclass]+1] = field
+      field.type_flags = field.type_flags + gui_elem_type_flags[subclass]
     end
-    goto continue
+    goto done
   end
 
   if ignored_fields[field.name] then
-    goto continue
+    goto done
   end
 
   print("Unhandled field name: "..field.name)
-  ::continue::
+
+  ::done::
+  if field.type_flags ~= 0 then
+    all_used_fields[#all_used_fields+1] = field
+  end
 end
 
 ---@class __gui-editor__.util
 return {
   gui_elem_types = gui_elem_types,
+  gui_elem_type_flags = gui_elem_type_flags,
   fields_for_type = fields_for_type,
+  all_used_fields = all_used_fields,
   get_player = get_player,
   invert = invert,
   clear_table = clear_table,

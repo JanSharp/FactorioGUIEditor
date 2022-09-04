@@ -25,6 +25,7 @@
 
 ---@class Node
 ---@field id integer @ per player unique id
+---@field type_flag integer
 ---@field is_main boolean?
 ---@field flat_index integer @ index in the `flat_nodes` list
 ---@field parent Node
@@ -56,6 +57,7 @@
 ---@field node_name string
 
 ---@class Field : ApiAttribute
+---@field type_flags integer
 
 -- refer to https://lua-api.factorio.com/latest/json-docs.html
 

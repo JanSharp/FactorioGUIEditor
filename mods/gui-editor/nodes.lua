@@ -57,6 +57,7 @@ local function create_node(player, parent_node, type, node_name)
   player.next_node_id = id + 1
   local node = {
     id = id,
+    type_flag = util.gui_elem_type_flags[type],
     node_name = node_name,
     -- set in update_hierarchy
     -- flat_index = nil,
