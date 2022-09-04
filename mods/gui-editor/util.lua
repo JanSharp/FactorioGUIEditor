@@ -69,7 +69,6 @@ end
 
 -- numbers used to order these fields first in order
 local fields_for_all_classes = {
-  ["index"] = -8,
   ["type"] = -7,
   ["name"] = -6,
   ["visible"] = -5,
