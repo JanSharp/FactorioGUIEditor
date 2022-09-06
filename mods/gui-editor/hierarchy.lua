@@ -10,7 +10,7 @@ local update_hierarchy
 ---@param player PlayerData
 ---@param tags any
 ---@param event EventData.on_gui_click
-local on_hierarchy_row_click = gui.register_handler(defines.events.on_gui_click, "on_hierarchy_row_click", function(player, tags, event)
+local on_hierarchy_row_click = gui.register_handler("on_hierarchy_row_click", function(player, tags, event)
   local node = player.nodes_by_id[tags.node_id]
   if event.button == defines.mouse_button_type.left then
     -- shift
@@ -164,7 +164,7 @@ function update_hierarchy(player)
             or "gui_editor_node_normal",
           style_mods = {horizontally_stretchable = true},
           tags = {node_id = node.id},
-          events = {on_hierarchy_row_click},
+          events = {[defines.events.on_gui_click] = on_hierarchy_row_click},
         },
       },
     })
@@ -199,7 +199,7 @@ end
 ---@param player PlayerData
 ---@param _ any
 ---@param event EventData.on_gui_selection_state_changed
-local on_new_drop_down = gui.register_handler(defines.events.on_gui_selection_state_changed, "on_new_drop_down", function(player, _, event)
+local on_new_drop_down = gui.register_handler("on_new_drop_down", function(player, _, event)
   local index = event.element.selected_index
   if index == 0 then return end
   event.element.selected_index = 0
@@ -224,7 +224,7 @@ local on_new_drop_down = gui.register_handler(defines.events.on_gui_selection_st
 end)
 
 ---@param player PlayerData
-local on_delete_click = gui.register_handler(defines.events.on_gui_click, "on_delete_click", function(player)
+local on_delete_click = gui.register_handler("on_delete_click", function(player)
   while true do
     local node = next(player.selected_nodes)
     if not node then break end
@@ -234,12 +234,12 @@ local on_delete_click = gui.register_handler(defines.events.on_gui_click, "on_de
   nodes.finish_changing_selection(player)
 end)
 
-local on_restart_click = gui.register_handler(defines.events.on_gui_click, "on_restart_click", function(player)
+local on_restart_click = gui.register_handler("on_restart_click", function(player)
   restart_manager.restart()
 end)
 
 ---@param player PlayerData
-local on_deselect_click = gui.register_handler(defines.events.on_gui_click, "on_deselect_click", function(player)
+local on_deselect_click = gui.register_handler("on_deselect_click", function(player)
   nodes.clear_selection(player)
   nodes.finish_changing_selection(player)
 end)
@@ -277,7 +277,7 @@ local function create_hierarchy(player)
                   top_padding = 1,
                   bottom_padding = 0,
                 },
-                events = {on_new_drop_down},
+                events = {[defines.events.on_gui_selection_state_changed] = on_new_drop_down},
                 children = {
                   {
                     type = "label",
@@ -299,7 +299,7 @@ local function create_hierarchy(player)
                   height = 28,
                 },
                 tooltip = "Delete selected nodes and their children.",
-                events = {on_delete_click},
+                events = {[defines.events.on_gui_click] = on_delete_click},
               },
               -- NOTE: this button should be somewhere else. Probably in the inspector for styles or something
               {
@@ -310,7 +310,7 @@ local function create_hierarchy(player)
                   height = 28,
                 },
                 tooltip = {"gui.restart"},
-                events = {on_restart_click},
+                events = {[defines.events.on_gui_click] = on_restart_click},
               },
             },
           },
@@ -342,7 +342,7 @@ local function create_hierarchy(player)
                     style_mods = {
                       vertical_spacing = 0,
                     },
-                    events = {on_deselect_click},
+                    events = {[defines.events.on_gui_click] = on_deselect_click},
                   },
                 },
               },

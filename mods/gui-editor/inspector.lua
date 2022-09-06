@@ -161,7 +161,6 @@ local function on_editor_value_changed(player, tags, new_value)
 end
 
 local on_boolean_editor_state_changed = gui.register_handler(
-  defines.events.on_gui_checked_state_changed,
   "on_boolean_editor_state_changed",
   ---@param player PlayerData
   ---@param tags any
@@ -182,13 +181,12 @@ local function boolean_editor(player, editor_data)
     tooltip = editor_data.field.description,
     enabled = editor_data.field.write,
     tags = get_tags_for_field_editor(editor_data),
-    events = {on_boolean_editor_state_changed},
+    events = {[defines.events.on_gui_checked_state_changed] = on_boolean_editor_state_changed},
   })
   create_mixed_values_label(tab, editor_data, false)
 end
 
 local on_string_editor_text_changed = gui.register_handler(
-  defines.events.on_gui_text_changed,
   "on_string_editor_text_changed",
   ---@param player PlayerData
   ---@param tags any
@@ -218,14 +216,13 @@ local function string_editor(player, editor_data)
       horizontally_stretchable = true,
     },
     tags = get_tags_for_field_editor(editor_data),
-    events = {on_string_editor_text_changed},
+    events = {[defines.events.on_gui_text_changed] = on_string_editor_text_changed},
   })
   create_mixed_values_label(editor_data.text_box_elem, editor_data, true)
   update_string_editor(editor_data)
 end
 
 local on_direction_editor_selection_state_changed = gui.register_handler(
-  defines.events.on_gui_selection_state_changed,
   "on_direction_editor_selection_state_changed",
   ---@param player PlayerData
   ---@param tags any
@@ -251,7 +248,7 @@ local function direction_editor(player, editor_data)
       or 2,
     tooltip = editor_data.field.description,
     tags = get_tags_for_field_editor(editor_data),
-    events = {on_direction_editor_selection_state_changed},
+    events = {[defines.events.on_gui_selection_state_changed] = on_direction_editor_selection_state_changed},
   })
   create_mixed_values_label(drop_down, editor_data, true)
   editor_data.requires_rebuild = true
@@ -318,7 +315,6 @@ local function create_inspector_field_editor(player, field)
 end
 
 local on_node_name_editor_text_changed = gui.register_handler(
-  defines.events.on_gui_text_changed,
   "on_node_name_editor_text_changed",
   ---@param player PlayerData
   ---@param tags any
@@ -355,7 +351,7 @@ local function node_name_editor(player)
       window = "inspector",
       editor_name = "node_name",
     },
-    events = {on_node_name_editor_text_changed},
+    events = {[defines.events.on_gui_text_changed] = on_node_name_editor_text_changed},
   })
   create_mixed_values_label(textfield_elem, editor_data, true)
 end

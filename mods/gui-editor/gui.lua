@@ -6,15 +6,21 @@ local handlers_by_func = {}
 ---@type table<string, function>
 local handlers_by_name = {}
 
+---@type table<defines.events, string>
+local event_id_to_name = {}
+for name, id in pairs(defines.events) do
+  if name:find("^on_gui") then
+    event_id_to_name[id] = name
+  end
+end
+
 ---@generic T
----@param event_define defines.events
 ---@param name string
 ---@param handler T
 ---@return T
-local function register_handler(event_define, name, handler)
+local function register_handler(name, handler)
   handlers_by_func[handler] = name
-  handlers_by_name[event_define] = handlers_by_name[event_define] or {}
-  handlers_by_name[event_define][name] = handler
+  handlers_by_name[name] = handler
   return handler
 end
 
@@ -26,11 +32,12 @@ local function handle_gui_event(gui_event_define)
     local tags = event.element.tags
     if not tags or not tags.__gui_editor then return end
     local tag_data = tags.__gui_editor
-    if not tag_data.handler_names then return end
+    local handler_names = tag_data.handlers and tag_data.handlers[event_id_to_name[event.name]]
+    if not handler_names then return end
     local player = util.get_player(event)
     if not player then return end
-    for handler_name in pairs(tag_data.handler_names) do
-      local handler = handlers_by_name[gui_event_define] and handlers_by_name[gui_event_define][handler_name]
+    for handler_name in pairs(handler_names) do
+      local handler = handlers_by_name[handler_name]
       if handler then
         handler(player, tag_data, event)
       end
@@ -65,12 +72,14 @@ local function create_elem(parent_elem, args, elems)
     args.tags = {__gui_editor = tags}
   end
   if events then
-    local handler_names = {}
-    for _, handler in pairs(events) do
-      handler_names[handlers_by_func[handler]] = true
+    local handlers = {}
+    for event_id, handler in pairs(events) do
+      local event_name = event_id_to_name[event_id]
+      handlers[event_name] = handlers[event_name] or {}
+      handlers[event_name][handlers_by_func[handler]] = true
     end
     args.tags = args.tags or {__gui_editor = {}}
-    args.tags.__gui_editor.handler_names = handler_names
+    args.tags.__gui_editor.handlers = handlers
   end
   local elem = parent_elem.add(args)
   if args.name then

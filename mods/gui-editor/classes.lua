@@ -39,7 +39,7 @@
 ---@field children ExtendedLuaGuiElement.add_param[]?
 ---@field style_mods LuaStyle?
 ---@field elem_mods LuaGuiElement?
----@field events function[]?
+---@field events table<defines.events, fun(player: PlayerData, tags: any, event: EventData)>
 
 ---@class Node
 ---@field id integer @ per player unique id
