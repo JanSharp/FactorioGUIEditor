@@ -24,13 +24,22 @@
 ---| "direction"
 ---| "node_name"
 
+---@class Editor
+---@field readonly boolean
+---@field optional boolean
+---@field get_value fun(editor_data: EditorData): any
+---@field get_value_from_gui fun(event: EventData): any
+
 ---@class EditorData
 ---@field editor_type EditorType
+---@field name string
 ---@field field Field
 ---@field requires_rebuild boolean?
 ---@field nodes_to_edit Node[]
 ---@field display_value any
 ---@field mixed_values boolean
+---@field error_sprite LuaGuiElement
+---@field error_msg string?
 ---@field mixed_values_label LuaGuiElement?
 ---@field wrap_elem LuaGuiElement?
 ---@field text_box_elem LuaGuiElement?
@@ -51,6 +60,7 @@
 ---@field children NodeList
 ---@field elem LuaGuiElement
 ---@field elem_data LuaGuiElement @ isn't actually a LuaGuiElement, but has almost all of its fields
+---@field errors_states table<string, string> @ field name => error message
 ---@field hierarchy_button LuaGuiElement
 ---@field deleted boolean? @ Deleted nodes should no longer be used anywhere, use this for cleanup
 ---@field prev Node?

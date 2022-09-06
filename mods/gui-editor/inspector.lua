@@ -4,6 +4,22 @@ local gui = require("__gui-editor__.gui")
 local hierarchy = depends("__gui-editor__.hierarchy")
 local nodes = depends("__gui-editor__.nodes")
 
+--[[
+
+notes:
+an editor needs:
+- editor_type
+- name - some name identifying what the editor is editing
+- read_only flag
+- optional flag
+- nodes_to_edit
+- display_value - evaluated using a get_value function passed to some generic eval function
+
+]]
+
+-- have a lookup table for all editor names here
+-- where the value is data and functions for that editor, all of which is static
+
 ---@param parent_elem LuaGuiElement
 ---@param column_count uint
 local function create_editor_root_table(parent_elem, column_count)
@@ -49,6 +65,16 @@ local function create_mixed_values_label(parent_elem, editor_data, use_black_fon
       font = "default-semibold",
       font_color = use_black_font and {0, 0, 0} or nil,
     },
+  })
+end
+
+---@param parent_elem LuaGuiElement
+---@param editor_data EditorData
+local function create_error_sprite(parent_elem, editor_data)
+  editor_data.error_sprite = gui.create_elem(parent_elem, {
+    type = "sprite",
+    sprite = "warning-white",
+    visible = false,
   })
 end
 
@@ -149,11 +175,34 @@ local function on_editor_value_changed(player, tags, new_value)
         node.hierarchy_button.caption = new_value
       else
         node.elem_data[editor_name] = new_value
+        local success = true
+        local error_msg
         if editor_data.requires_rebuild then
           -- NOTE: for multi editing this can be optimized
           nodes.rebuild_elem(node)
         else
-          node.elem[editor_name] = new_value
+          local current_success, msg = xpcall(function()
+            node.elem[editor_name] = new_value
+          end, function(msg)
+            return msg
+          end)
+          if current_success then
+            if editor_data.field then
+              node.errors_states[editor_data.field.name] = nil
+            end
+          else
+            success = false
+            error_msg = msg
+            assert(editor_data.field)
+            node.errors_states[editor_data.field.name] = msg
+          end
+        end
+        if editor_data.error_sprite then
+          editor_data.error_sprite.visible = not success
+          editor_data.error_msg = error_msg
+          if not success then
+            editor_data.error_sprite.tooltip = error_msg
+          end
         end
       end
     end
@@ -204,7 +253,15 @@ local function string_editor(player, editor_data)
   editor_data.wrap_elem = gui.create_elem(tab, {
     type = "empty-widget",
   })
-  editor_data.text_box_elem = gui.create_elem(tab, {
+  local tb_flow = gui.create_elem(tab, {
+    type = "flow",
+    direction = "horizontal",
+    style_mods = {
+      vertical_align = "center",
+    },
+  })
+  create_error_sprite(tb_flow, editor_data)
+  editor_data.text_box_elem = gui.create_elem(tb_flow, {
     type = "text-box",
     text = editor_data.display_value or "",
     tooltip = editor_data.field.description,
@@ -286,6 +343,7 @@ local general_editors = {
 ---@param field Field
 local function create_inspector_field_editor(player, field)
   local editor_data = {
+    name = field.name,
     field = field,
   }
   player.inspector_editors[field.name] = editor_data
@@ -326,7 +384,10 @@ local on_node_name_editor_text_changed = gui.register_handler(
 
 ---@param player PlayerData
 local function node_name_editor(player)
-  local editor_data = {editor_type = "node_name"}
+  local editor_data = {
+    name = "node_name",
+    editor_type = "node_name",
+  }
   player.inspector_editors["node_name"] = editor_data
   eval_nodes_to_edit_and_display_value(
     player,

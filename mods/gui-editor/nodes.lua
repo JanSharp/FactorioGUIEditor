@@ -55,6 +55,7 @@ local function create_node(player, parent_node, type, node_name)
   end
   local id = player.next_node_id
   player.next_node_id = id + 1
+  ---@type Node
   local node = {
     id = id,
     type_flag = util.gui_elem_type_flags[type],
@@ -63,6 +64,7 @@ local function create_node(player, parent_node, type, node_name)
     -- flat_index = nil,
     elem = elem,
     elem_data = elem_data,
+    errors_states = {},
     children = ll.new_list(false),
   }
   player.nodes_by_id[id] = node
