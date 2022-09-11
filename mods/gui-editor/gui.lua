@@ -16,8 +16,7 @@ end
 
 ---@generic T
 ---@param name string
----@param handler T
----@return T
+---@param handler fun(player: PlayerData, tags: any, event: T)
 local function register_handler(name, handler)
   handlers_by_func[handler] = name
   handlers_by_name[name] = handler

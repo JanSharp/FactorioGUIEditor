@@ -42,11 +42,14 @@ local function depends_internal(module, allow_circular)
   loading_results = {}
   loading_modules[module] = loading_results
   local result = real_require(module)
+  loading_modules[module] = nil
+  if not loading_results[1] then
+    return result
+  end
+
   if type(result) ~= "table" then
     error("Lazily loaded modules must return a table. module: '"..module.."'.")
   end
-  loading_results[module] = result
-  loading_modules[module] = nil
   for _, loading_result in ipairs(loading_results) do
     setmetatable(loading_result, nil)
     for k, v in pairs(result) do
