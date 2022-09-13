@@ -9,6 +9,9 @@ local type_mapping = {
   ["boolean"] = "boolean",
   ["string"] = "string",
   ["LocalisedString"] = "string",
+  ["double"] = "number",
+  ["uint"] = "number",
+  ["int"] = "number",
 }
 
 ---@param player PlayerData
@@ -52,6 +55,18 @@ local function create_inspector_field_editor(player, field)
     params.can_error = false
     params.drop_down_items = {"horizontal", "vertical"}
     params.drop_down_values = {"horizontal", "vertical"}
+    editors.create_editor(player, params, {
+      data_type = "node_field",
+      nodes_to_edit = nodes_to_edit,
+      requires_rebuild = true,
+    })
+    return
+  end
+
+  if field.name == "column_count" then
+    local params = get_base_params_for_field(player, field, "number")
+    params.readonly = false
+    params.can_error = false
     editors.create_editor(player, params, {
       data_type = "node_field",
       nodes_to_edit = nodes_to_edit,

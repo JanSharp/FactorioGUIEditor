@@ -3,6 +3,7 @@ local editor_util = require("__gui-editor__.editor_util")
 require("__gui-editor__.editors.missing_editor")
 require("__gui-editor__.editors.boolean_editor")
 require("__gui-editor__.editors.drop_down_editor")
+require("__gui-editor__.editors.number_editor")
 require("__gui-editor__.editors.string_editor")
 
 ---@param player PlayerData
