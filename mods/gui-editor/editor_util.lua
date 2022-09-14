@@ -85,12 +85,9 @@ local function create_error_sprite(parent_elem, editor_state)
 end
 
 ---@param editor_state EditorState
----@param error_count integer
----@param unique_error_count integer
----@param error_msgs table<string, true>?
-local function update_error_sprite(editor_state, error_count, unique_error_count, error_msgs)
+local function update_error_sprite(editor_state)
   if not editor_state.editor_params.can_error then
-    if error_count ~= 0 then
+    if editor_state.error_count ~= 0 then
       error("Created an editor with 'can_error' set to false while the current state for the data \z
         said editor is editing has errors."
       )
@@ -98,7 +95,7 @@ local function update_error_sprite(editor_state, error_count, unique_error_count
     return
   end
 
-  if error_count ~= 0 then
+  if editor_state.error_count ~= 0 then
     local data = editor_state.editor_data
     local node_count
     if data.data_type == "node_name" or data.data_type == "node_field" then
@@ -111,23 +108,54 @@ local function update_error_sprite(editor_state, error_count, unique_error_count
 
     if node_count > 1 then
       local msg_parts = {}
-      msg_parts[1] = error_count.."/"..node_count.." assignments had errors. "
-        ..unique_error_count.." unique error message"..(unique_error_count > 1 and "s:" or ":")
       local index = 2
-      for msg in pairs(error_msgs) do
+      for msg in pairs(editor_state.error_msgs) do
         msg_parts[index] = msg
         index = index + 1
       end
+      local unique_error_count = index - 2
+      msg_parts[1] = editor_state.error_count.."/"..node_count.." assignments had errors. "
+        ..unique_error_count.." unique error message"..(unique_error_count > 1 and "s:" or ":")
       editor_state.display_error_msg = table.concat(msg_parts, "\n\n")
     else
-      ---@cast error_msgs -nil
-      editor_state.display_error_msg = next(error_msgs)
+      editor_state.display_error_msg = next(editor_state.error_msgs)
     end
   else
     editor_state.display_error_msg = nil
   end
-  editor_state.error_sprite.visible = error_count ~= 0
+  editor_state.error_sprite.visible = editor_state.error_count ~= 0
   editor_state.error_sprite.tooltip = editor_state.display_error_msg
+end
+
+---@param editor_state EditorState
+---@param error_state ErrorState
+local function add_error_state(editor_state, error_state)
+  editor_state.error_count = editor_state.error_count + 1
+  editor_state.error_msgs[error_state.msg] = (editor_state.error_msgs[error_state.msg] or 0) + 1
+end
+
+---@param editor_state EditorState
+---@param error_state ErrorState
+local function remove_error_state(editor_state, error_state)
+  editor_state.error_count = editor_state.error_count + 1
+  local count = editor_state.error_msgs[error_state.msg] - 1
+  editor_state.error_msgs[error_state.msg] = count ~= 0 and count or nil
+end
+
+---@param editor_state EditorState
+---@param node Node
+---@param field_name string
+---@param error_state ErrorState?
+local function set_error_state(editor_state, node, field_name, error_state)
+  local prev_error_state = node.errors_states[field_name]
+  if editor_state == prev_error_state then return end
+  if prev_error_state then
+    remove_error_state(editor_state, prev_error_state)
+  end
+  if error_state then
+    add_error_state(editor_state, error_state)
+  end
+  node.errors_states[field_name] = error_state
 end
 
 ---@param editor_state EditorState
@@ -159,9 +187,6 @@ local function read_editor_data(editor_state)
     local value
     local not_first
     local mixed = false
-    local error_count = 0
-    local unique_error_count = 0
-    local error_msgs
 
     local function process_value(new_value)
       if mixed then return end
@@ -181,19 +206,14 @@ local function read_editor_data(editor_state)
       if not error_state then
         process_value(get_value(node))
       else
-        error_msgs = error_msgs or {}
-        error_count = error_count + 1
-        if not error_msgs[error_state.msg] then
-          unique_error_count = unique_error_count + 1
-          error_msgs[error_state.msg] = true
-        end
+        add_error_state(editor_state, error_state)
         process_value(error_state.pending_value)
       end
     end
 
     editor_state.display_value = value
     editor_state.mixed_values = mixed
-    update_error_sprite(editor_state, error_count, unique_error_count, error_msgs)
+    update_error_sprite(editor_state)
 
     return
   end
@@ -209,9 +229,6 @@ local function write_editor_data(editor_state)
   if data.data_type == "node_name" or data.data_type == "node_field" then
     local set_value
     local can_error = editor_state.editor_params.can_error
-    local error_count = 0
-    local unique_error_count = 0
-    local error_msgs
     if data.data_type == "node_name" then
       if can_error then
         error("Setting 'node_name' cannot error but the 'can_error' flag is set.")
@@ -242,20 +259,14 @@ local function write_editor_data(editor_state)
               return msg
             end)--[[@as string?]]
             if success then
-              node.errors_states[field_name] = nil
               node.elem_data[field_name] = value
+              set_error_state(editor_state, node, field_name, nil)
             else
-              msg = msg or "No error message."
-              error_msgs = error_msgs or {}
-              error_count = error_count + 1
-              if not error_msgs[msg] then
-                unique_error_count = unique_error_count + 1
-                error_msgs[msg] = true
-              end
-              node.errors_states[field_name] = {
-                msg = msg,
+              set_error_state(editor_state, node, field_name, {
+                field_name = field_name,
+                msg = msg or "No error message.",
                 pending_value = value,
-              }
+              })
             end
           else
             node.elem_data[field_name] = value
@@ -269,7 +280,7 @@ local function write_editor_data(editor_state)
       set_value(node, editor_state.display_value)
     end
 
-    update_error_sprite(editor_state, error_count, unique_error_count, error_msgs)
+    update_error_sprite(editor_state)
     return
   end
 end
@@ -353,6 +364,7 @@ local function create_optional_switch(parent_elem, editor_state)
   })
 end
 
+---@class __gui-editor__.editor_util
 return {
   editors = editors,
   add_editor = add_editor,

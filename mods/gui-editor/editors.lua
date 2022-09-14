@@ -10,10 +10,13 @@ require("__gui-editor__.editors.string_editor")
 ---@param editor_params EditorParams
 ---@param editor_data EditorData
 local function create_editor(player, editor_params, editor_data)
+  ---@type EditorState
   local editor_state = {
     player = player,
     editor_params = editor_params,
     editor_data = editor_data,
+    error_count = 0,
+    error_msgs = editor_params.can_error and {} or nil,
   }
 
   local active_editors = player.active_editors[editor_params.window_name]

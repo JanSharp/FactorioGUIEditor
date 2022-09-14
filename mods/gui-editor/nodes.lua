@@ -195,12 +195,18 @@ local function rebuild_elem_internal(node, parent_elem)
           return msg
         end)--[[@as string]]
         if not success then
+          -- if there is an editor for this node and this field at the moment
+          -- it will not be updated. in this case the editor has to be rebuilt.
+          -- We simply do not have the references necessary to find the editor_state from here,
+          -- and it is not worth adding them just for this to update in real time,
+          -- which will probably never even be needed
           node.errors_states[field.name] = {
+            field_name = field.name,
             msg = msg,
             pending_value = elem_data[field.name]
           }
+          -- reset elem data to default
           elem_data[field.name] = elem[field.name]
-          -- TODO: update any active editor
         end
       else
         elem[field.name] = elem_data[field.name]
