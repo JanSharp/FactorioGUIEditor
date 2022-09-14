@@ -85,6 +85,52 @@ local function create_error_sprite(parent_elem, editor_state)
 end
 
 ---@param editor_state EditorState
+---@param error_count integer
+---@param unique_error_count integer
+---@param error_msgs table<string, true>?
+local function update_error_sprite(editor_state, error_count, unique_error_count, error_msgs)
+  if not editor_state.editor_params.can_error then
+    if error_count ~= 0 then
+      error("Created an editor with 'can_error' set to false while the current state for the data \z
+        said editor is editing has errors."
+      )
+    end
+    return
+  end
+
+  if error_count ~= 0 then
+    local data = editor_state.editor_data
+    local node_count
+    if data.data_type == "node_name" or data.data_type == "node_field" then
+      node_count = #data.nodes_to_edit
+    else
+      error("getting the total count of selected data for the data type '"..data.data_type.."' is \z
+        not implemented."
+      )
+    end
+
+    if node_count > 1 then
+      local msg_parts = {}
+      msg_parts[1] = error_count.."/"..node_count.." assignments had errors. "
+        ..unique_error_count.." unique error message"..(unique_error_count > 1 and "s:" or ":")
+      local index = 2
+      for msg in pairs(error_msgs) do
+        msg_parts[index] = msg
+        index = index + 1
+      end
+      editor_state.display_error_msg = table.concat(msg_parts, "\n\n")
+    else
+      ---@cast error_msgs -nil
+      editor_state.display_error_msg = next(error_msgs)
+    end
+  else
+    editor_state.display_error_msg = nil
+  end
+  editor_state.error_sprite.visible = error_count ~= 0
+  editor_state.error_sprite.tooltip = editor_state.display_error_msg
+end
+
+---@param editor_state EditorState
 local function read_editor_data(editor_state)
   local data = editor_state.editor_data
   local editor = get_editor(editor_state)
@@ -97,35 +143,58 @@ local function read_editor_data(editor_state)
 
   if data.data_type == "node_name" or data.data_type == "node_field" then
     local get_value
+    local field_name = editor_state.editor_params.name
     if data.data_type == "node_name" then
       ---@param node Node
       function get_value(node)
         return node.node_name
       end
     else
-      local field_name = editor_state.editor_params.name
       ---@param node Node
       function get_value(node)
         return node.elem_data[field_name]
       end
     end
+
     local value
     local not_first
     local mixed = false
-    for _, node in pairs(data.nodes_to_edit) do
+    local error_count = 0
+    local unique_error_count = 0
+    local error_msgs
+
+    local function process_value(new_value)
+      if mixed then return end
       if not_first then
-        if get_value(node) ~= value then
+        if not editor.values_equal(editor_state, new_value, value) then
           value = editor.get_mixed_display_value(editor_state)
           mixed = true
-          break
         end
       else
-        value = get_value(node)
+        value = new_value
         not_first = true
       end
     end
+
+    for _, node in pairs(data.nodes_to_edit) do
+      local error_state = node.errors_states[field_name]
+      if not error_state then
+        process_value(get_value(node))
+      else
+        error_msgs = error_msgs or {}
+        error_count = error_count + 1
+        if not error_msgs[error_state.msg] then
+          unique_error_count = unique_error_count + 1
+          error_msgs[error_state.msg] = true
+        end
+        process_value(error_state.pending_value)
+      end
+    end
+
     editor_state.display_value = value
     editor_state.mixed_values = mixed
+    update_error_sprite(editor_state, error_count, unique_error_count, error_msgs)
+
     return
   end
 
@@ -150,6 +219,7 @@ local function write_editor_data(editor_state)
       ---@param node Node
       ---@param value any
       function set_value(node, value)
+        -- TODO: support error states
         node.node_name = value
         node.hierarchy_button.caption = value
       end
@@ -160,7 +230,7 @@ local function write_editor_data(editor_state)
       function set_value(node, value)
         if data.requires_rebuild then
           if can_error then
-            error("A field that can_error and requires_rebuild is not supported.")
+            error("A field that 'can_error' and 'requires_rebuild' is not supported.")
           end
           node.elem_data[field_name] = value
           nodes.rebuild_elem(node)
@@ -182,7 +252,10 @@ local function write_editor_data(editor_state)
                 unique_error_count = unique_error_count + 1
                 error_msgs[msg] = true
               end
-              node.errors_states[field_name] = msg
+              node.errors_states[field_name] = {
+                msg = msg,
+                pending_value = value,
+              }
             end
           else
             node.elem_data[field_name] = value
@@ -196,28 +269,7 @@ local function write_editor_data(editor_state)
       set_value(node, editor_state.display_value)
     end
 
-    if can_error then
-      if error_count ~= 0 then
-        local node_count = #data.nodes_to_edit
-        if node_count > 1 then
-          local msg_parts = {}
-          msg_parts[1] = error_count.."/"..node_count.." assignments had errors. "
-            ..unique_error_count.." unique error message"..(unique_error_count > 1 and "s:" or ":")
-          local index = 2
-          for msg in pairs(error_msgs) do
-            msg_parts[index] = msg
-            index = index + 1
-          end
-          editor_state.display_error_msg = table.concat(msg_parts, "\n\n")
-        else
-          editor_state.display_error_msg = next(error_msgs)
-        end
-      else
-        editor_state.display_error_msg = nil
-      end
-      editor_state.error_sprite.visible = error_count ~= 0
-      editor_state.error_sprite.tooltip = editor_state.display_error_msg
-    end
+    update_error_sprite(editor_state, error_count, unique_error_count, error_msgs)
     return
   end
 end

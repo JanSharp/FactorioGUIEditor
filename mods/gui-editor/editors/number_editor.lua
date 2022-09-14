@@ -74,10 +74,18 @@ local function get_mixed_display_value(editor_state)
   return not editor_state.editor_params.optional and 0 or nil
 end
 
+---@param editor_state EditorState
+---@param left number?
+---@param right number?
+local function values_equal(editor_state, left, right)
+  return left == right
+end
+
 editor_util.add_editor{
   editor_type = "number",
   create = create,
   read_display_value_from_gui = read_display_value_from_gui,
   write_display_value_to_gui = write_display_value_to_gui,
   get_mixed_display_value = get_mixed_display_value,
+  values_equal = values_equal,
 }

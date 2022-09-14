@@ -34,6 +34,7 @@
 ---@field read_display_value_from_gui fun(editor_state: EditorState)
 ---@field write_display_value_to_gui fun(editor_state: EditorState)
 ---@field get_mixed_display_value fun(editor_state: EditorState): any
+---@field values_equal fun(editor_state: EditorState, left: any, right: any): boolean
 
 ---static per editor data
 ---@class EditorParams
@@ -87,7 +88,7 @@
 ---@field children NodeList
 ---@field elem LuaGuiElement
 ---@field elem_data LuaGuiElement @ isn't actually a LuaGuiElement, but has almost all of its fields
----@field errors_states table<string, string> @ field name => error message
+---@field errors_states table<string, {msg: string, pending_value: any?}> @ indexed by field name
 ---@field hierarchy_button LuaGuiElement
 ---@field deleted boolean? @ Deleted nodes should no longer be used anywhere, use this for cleanup
 ---@field prev Node?
