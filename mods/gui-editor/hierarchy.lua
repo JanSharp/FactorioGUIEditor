@@ -150,7 +150,7 @@ function update_hierarchy(player)
           tooltip = "left click:\n\z
             - no modifies: Select only this node.\n\z
             - ctrl: Add/Remove this node to/from the selection.\n\z
-            - shift: Add all nodes from the last selected node up to this node.\n\z
+            - shift: Add all nodes from the cursor node(s) up to this node.\n\z
             - alt: Add this node to selection as another cursor.\n\z
             - shift + alt: The same as shift, but makes all affected nodes cursors.\n\z
             \n\z
