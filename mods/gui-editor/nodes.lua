@@ -188,7 +188,23 @@ local function rebuild_elem_internal(node, parent_elem)
     end
     if field.write then
       -- BUG: position for mini-maps is nil in elem_data? encountered when trying to move it
-      elem[field.name] = elem_data[field.name]
+      if field.name == "name" then
+        local success, msg = xpcall(function()
+          elem[field.name] = elem_data[field.name]
+        end, function(msg)
+          return msg
+        end)--[[@as string]]
+        if not success then
+          node.errors_states[field.name] = {
+            msg = msg,
+            pending_value = elem_data[field.name]
+          }
+          elem_data[field.name] = elem[field.name]
+          -- TODO: update any active editor
+        end
+      else
+        elem[field.name] = elem_data[field.name]
+      end
     end
     ::continue::
   end
@@ -223,6 +239,8 @@ local function move_node(node, new_parent, prev_sibling)
     current_index = current_index - 1
     other_node = other_node.prev
   end
+  -- TODO: somehow find all nodes with pending `name` changes in their error_state which can try
+  -- using that name again now
 end
 
 ---@param player PlayerData
