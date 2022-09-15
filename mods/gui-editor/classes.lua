@@ -21,11 +21,10 @@
 
 ---@alias EditorType
 ---| "missing"
+---| "boolean"
+---| "number"
 ---| "string"
 ---| "drop_down"
----| "boolean"
----| "direction"
----| "node_name"
 
 ---100% static
 ---@class Editor
@@ -80,10 +79,11 @@
 ---@field elem_mods LuaGuiElement?
 ---@field events table<defines.events, fun(player: PlayerData, tags: any, event: EventData)>
 
----@class ErrorState
----@field field_name string @ -- NOTE: this is probably redundant. if it is, remove it
----@field msg string
----@field pending_value any?
+---@class NodeField
+---@field field_name string
+---@field value any
+---@field display_value any
+---@field error_msg string?
 
 ---@class Node
 ---@field id integer @ per player unique id
@@ -94,8 +94,7 @@
 ---@field node_name string @ not empty, not unique, single line
 ---@field children NodeList
 ---@field elem LuaGuiElement
----@field elem_data LuaGuiElement @ isn't actually a LuaGuiElement, but has almost all of its fields
----@field errors_states table<string, ErrorState> @ indexed by field name
+---@field node_fields table<string, NodeField>
 ---@field hierarchy_button LuaGuiElement
 ---@field deleted boolean? @ Deleted nodes should no longer be used anywhere, use this for cleanup
 ---@field prev Node?
@@ -106,7 +105,6 @@
 ---@field flat_index nil
 ---@field parent nil
 ---@field node_name "root"
----@field elem_data nil
 ---@field hierarchy_button nil
 ---@field deleted nil
 ---@field prev nil

@@ -41,16 +41,32 @@ local function create_node(player, parent_node, type, node_name)
     args.elem_type = "item"
   end
   local elem = parent_node.elem.add(args)
-  local elem_data = {}
+  ---@type table<string, NodeField>
+  local node_fields = {
+    node_name = {
+      field_name = "node_name",
+      value = node_name,
+      display_value = node_name,
+    },
+  }
   for _, field in pairs(util.fields_for_type[type]) do
     if field.name == "mouse_button_filter" then
       local mouse_button_filter = {}
-      elem_data.mouse_button_filter = mouse_button_filter
+      node_fields.mouse_button_filter = {
+        field_name = "mouse_button_filter",
+        value = mouse_button_filter,
+        display_value = mouse_button_filter,
+      }
       for filter in pairs(elem.mouse_button_filter) do
         mouse_button_filter[#mouse_button_filter+1] = filter
       end
     else
-      elem_data[field.name] = elem[field.name]
+      local value = elem[field.name]
+      node_fields[field.name] = {
+        field_name = field.name,
+        value = value,
+        display_value = value,
+      }
     end
   end
   local id = player.next_node_id
@@ -63,8 +79,7 @@ local function create_node(player, parent_node, type, node_name)
     -- set in update_hierarchy
     -- flat_index = nil,
     elem = elem,
-    elem_data = elem_data,
-    errors_states = {},
+    node_fields = node_fields,
     children = ll.new_list(false),
   }
   player.nodes_by_id[id] = node
@@ -144,23 +159,23 @@ end
 ---@param node Node
 ---@param parent_elem LuaGuiElement
 local function rebuild_elem_internal(node, parent_elem)
-  local elem_data = node.elem_data
-  local args = {type = elem_data.type}
+  local node_fields = node.node_fields
+  local args = {type = node_fields.type.value}
 
   -- required, and some are read only after creation too
   if args.type == "table" then
-    args.column_count = elem_data.column_count
+    args.column_count = node_fields.column_count.value
   elseif args.type == "checkbox" or args.type == "radiobutton" then
-    args.state = elem_data.state
+    args.state = node_fields.state.value
   elseif args.type == "camera" then
-    args.position = elem_data.position
+    args.position = node_fields.position.value
   elseif args.type == "choose-elem-button" then
-    args.elem_type = elem_data.elem_type
+    args.elem_type = node_fields.elem_type.value
   end
 
   -- not required, but read only after creation
   if args.type == "flow" or args.type == "frame" then
-    args.direction = elem_data.direction
+    args.direction = node_fields.direction.value
   end
 
   local elem = gui.create_elem(parent_elem, args)
@@ -174,7 +189,7 @@ local function rebuild_elem_internal(node, parent_elem)
     node.elem.destroy()
   end
   node.elem = elem
-  for _, field in pairs(util.fields_for_type[elem_data.type]) do
+  for _, field in pairs(util.fields_for_type[node_fields.type.value]) do
     if is_root(node) then
       -- root nodes cannot have `drag_target`
       if field.name == "drag_target" then
@@ -187,10 +202,10 @@ local function rebuild_elem_internal(node, parent_elem)
       end
     end
     if field.write then
-      -- BUG: position for mini-maps is nil in elem_data? encountered when trying to move it
       if field.name == "name" then
+        local node_field = node_fields[field.name]
         local success, msg = xpcall(function()
-          elem[field.name] = elem_data[field.name]
+          elem[field.name] = node_field.value
         end, function(msg)
           return msg
         end)--[[@as string]]
@@ -200,16 +215,14 @@ local function rebuild_elem_internal(node, parent_elem)
           -- We simply do not have the references necessary to find the editor_state from here,
           -- and it is not worth adding them just for this to update in real time,
           -- which will probably never even be needed
-          node.errors_states[field.name] = {
-            field_name = field.name,
-            msg = msg,
-            pending_value = elem_data[field.name]
-          }
+          node_field.error_msg = msg
+          node_field.display_value = node_field.value
           -- reset elem data to default
-          elem_data[field.name] = elem[field.name]
+          node_field.value = elem[field.name]
         end
       else
-        elem[field.name] = elem_data[field.name]
+        -- BUG: position for mini-maps is nil in node_fields? encountered when trying to move it
+        elem[field.name] = node_fields[field.name].value
       end
     end
     ::continue::
