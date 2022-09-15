@@ -45,9 +45,20 @@ script.on_event(defines.events.on_player_created, function(event)
   gvs.show_quickbar = false
   gvs.show_shortcut_bar = false
 
+  local background_rendering = rendering.draw_rectangle{
+    color = {0, 0, 0},
+    draw_on_ground = true,
+    players = {player},
+    surface = player.surface,
+    filled = true,
+    left_top = {player.position.x - 1000, player.position.y - 1000},
+    right_bottom = {player.position.x + 1000, player.position.y + 1000},
+  }
+
   ---@type PlayerData
   local player_data = {
     player = player,
+    background_rendering = background_rendering,
     -- set by the create calls below
     -- hierarchy_window_elem = nil,
     -- inspector_window_elem = nil,
