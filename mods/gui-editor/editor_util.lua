@@ -86,15 +86,6 @@ end
 
 ---@param editor_state EditorState
 local function update_error_sprite(editor_state)
-  if not editor_state.editor_params.can_error then
-    if editor_state.error_count ~= 0 then
-      error("Created an editor with 'can_error' set to false while the current state for the data \z
-        said editor is editing has errors."
-      )
-    end
-    return
-  end
-
   if editor_state.error_count ~= 0 then
     local data = editor_state.editor_data
     local node_count
@@ -197,7 +188,7 @@ local function read_editor_data(editor_state)
 
   if data.data_type == "node_name" or data.data_type == "node_field" then
     local field_name = editor_state.editor_params.name
-    local value
+    local display_value
     local not_first
     local mixed = false
 
@@ -207,20 +198,25 @@ local function read_editor_data(editor_state)
         add_error_state(editor_state, node_field.error_msg)
       end
 
+      if not node_field.initialized_display_value then
+        node_field.initialized_display_value = true
+        node_field.display_value = editor.value_to_display_value(editor_state, node_field.value)
+      end
+
       if not mixed then
         if not_first then
-          if not editor.values_equal(editor_state, node_field.display_value, value) then
-            value = editor.get_mixed_display_value(editor_state)
+          if not editor.values_equal(editor_state, node_field.display_value, display_value) then
+            display_value = editor.get_mixed_display_value(editor_state)
             mixed = true
           end
         else
-          value = node_field.display_value
+          display_value = node_field.display_value
           not_first = true
         end
       end
     end
 
-    editor_state.display_value = value
+    editor_state.display_value = display_value
     editor_state.mixed_values = mixed
     update_error_sprite(editor_state)
 
@@ -238,27 +234,26 @@ local function write_editor_data(editor_state)
   if data.data_type == "node_name" or data.data_type == "node_field" then
     local set_value
     local can_error = editor_state.editor_params.can_error
+    local field_name = editor_state.editor_params.name
+    local display_value = editor_state.display_value
+    local value = editor_state.valid_display_value
+      and get_editor(editor_state).display_value_to_value(editor_state, display_value)
+
     if data.data_type == "node_name" then
       if can_error then
         error("Setting 'node_name' cannot error but the 'can_error' flag is set.")
       end
       ---@param node Node
-      ---@param value any
-      function set_value(node, value)
+      function set_value(node)
         -- TODO: support error states
         node.node_name = value
-        local node_field = node.node_fields.node_name
-        node_field.value = value
-        node_field.display_value = value
+        node.node_fields.node_name.value = value
         node.hierarchy_button.caption = value
       end
     else
-      local field_name = editor_state.editor_params.name
       ---@param node Node
-      ---@param value any
-      function set_value(node, value)
+      function set_value(node)
         local node_field = node.node_fields[field_name]
-        node_field.display_value = value
         if data.requires_rebuild then
           if can_error then
             error("A field that 'can_error' and 'requires_rebuild' is not supported.")
@@ -274,7 +269,6 @@ local function write_editor_data(editor_state)
             end)--[[@as string?]]
             if success then
               node_field.value = value
-              set_single_error_state(editor_state, node, field_name, nil)
             else
               -- not setting `node_field.value` to keep it the same
               set_single_error_state(editor_state, node, field_name, msg or "No error message.")
@@ -288,7 +282,14 @@ local function write_editor_data(editor_state)
     end
 
     for _, node in pairs(data.nodes_to_edit) do
-      set_value(node, editor_state.display_value)
+      local node_field = node.node_fields[field_name]
+      node_field.display_value = display_value
+      if editor_state.valid_display_value then
+        set_single_error_state(editor_state, node, field_name, nil)
+        set_value(node)
+      else
+        set_single_error_state(editor_state, node, field_name, editor_state.validation_error_msg)
+      end
     end
 
     update_error_sprite(editor_state)
@@ -327,8 +328,28 @@ local function write_display_value_to_gui(editor_state)
 end
 
 ---@param editor_state EditorState
+local function validate_display_value(editor_state)
+  local success, error_msg = get_editor(editor_state).validate_display_value(editor_state)
+  if success then
+    if not editor_state.valid_display_value then
+      editor_state.valid_display_value = true
+      editor_state.validation_error_msg = nil
+      update_error_sprite(editor_state)
+    end
+  else
+    editor_state.valid_display_value = false
+    error_msg = "Invalid input: "..(error_msg or "No error message.")
+    if error_msg ~= editor_state.validation_error_msg then
+      editor_state.validation_error_msg = error_msg
+      update_error_sprite(editor_state)
+    end
+  end
+end
+
+---@param editor_state EditorState
 local function on_editor_gui_event_internal(editor_state)
   read_display_value_from_gui(editor_state)
+  validate_display_value(editor_state)
   write_editor_data(editor_state)
   editor_state.mixed_values_label.visible = false
 end

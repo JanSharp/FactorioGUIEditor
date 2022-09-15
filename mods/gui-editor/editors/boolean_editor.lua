@@ -17,21 +17,16 @@ local function create(editor_state)
   local params = editor_state.editor_params
   local tab = editor_util.create_table_without_spacing(params.parent_elem, 3)
   editor_util.create_editor_name_label(tab, editor_state)
-  local cb_parent = tab
-  if params.can_error or params.optional then
-    cb_parent = gui.create_elem(tab, {
-      type = "flow",
-      direction = "horizontal",
-      style_mods = {
-        vertical_align = "center",
-      },
-    })
-    if params.can_error then
-      editor_util.create_error_sprite(cb_parent, editor_state)
-    end
-    if params.optional then
-      editor_util.create_optional_switch(cb_parent, editor_state)
-    end
+  local cb_parent = gui.create_elem(tab, {
+    type = "flow",
+    direction = "horizontal",
+    style_mods = {
+      vertical_align = "center",
+    },
+  })
+  editor_util.create_error_sprite(cb_parent, editor_state)
+  if params.optional then
+    editor_util.create_optional_switch(cb_parent, editor_state)
   end
   editor_state.check_box_elem = gui.create_elem(cb_parent, {
     type = "checkbox",
@@ -42,6 +37,23 @@ local function create(editor_state)
     events = {[defines.events.on_gui_checked_state_changed] = on_state_changed},
   })
   editor_util.create_mixed_values_label(tab, editor_state, false)
+end
+
+---@param editor_state EditorState
+local function validate_display_value(editor_state)
+  return true
+end
+
+---@param editor_state EditorState
+---@param value boolean
+local function value_to_display_value(editor_state, value)
+  return value
+end
+
+---@param editor_state EditorState
+---@param display_value boolean
+local function display_value_to_value(editor_state, display_value)
+  return display_value
 end
 
 ---@param editor_state EditorState
@@ -73,6 +85,9 @@ end
 editor_util.add_editor{
   editor_type = "boolean",
   create = create,
+  validate_display_value = validate_display_value,
+  value_to_display_value = value_to_display_value,
+  display_value_to_value = display_value_to_value,
   read_display_value_from_gui = read_display_value_from_gui,
   write_display_value_to_gui = write_display_value_to_gui,
   get_mixed_display_value = get_mixed_display_value,

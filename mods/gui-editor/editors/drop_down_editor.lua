@@ -15,21 +15,16 @@ local function create(editor_state)
   local params = editor_state.editor_params
   local tab = editor_util.create_table_without_spacing(params.parent_elem, 2)
   editor_util.create_editor_name_label(tab, editor_state)
-  local dd_parent = tab
-  if params.can_error or params.optional then
-    dd_parent = gui.create_elem(tab, {
-      type = "flow",
-      direction = "horizontal",
-      style_mods = {
-        vertical_align = "center",
-      },
-    })
-    if params.can_error then
-      editor_util.create_error_sprite(dd_parent, editor_state)
-    end
-    if params.optional then
-      editor_util.create_optional_switch(dd_parent, editor_state)
-    end
+  local dd_parent = gui.create_elem(tab, {
+    type = "flow",
+    direction = "horizontal",
+    style_mods = {
+      vertical_align = "center",
+    },
+  })
+  editor_util.create_error_sprite(dd_parent, editor_state)
+  if params.optional then
+    editor_util.create_optional_switch(dd_parent, editor_state)
   end
   editor_state.drop_down_elem = gui.create_elem(dd_parent, {
     type = "drop-down",
@@ -40,6 +35,25 @@ local function create(editor_state)
     events = {[defines.events.on_gui_selection_state_changed] = on_selection_state_changed},
   })
   editor_util.create_mixed_values_label(editor_state.drop_down_elem, editor_state, true)
+end
+
+---@param editor_state EditorState
+local function validate_display_value(editor_state)
+  return true
+end
+
+-- TODO: impl display_value being the selected_index, not the actual value
+
+---@param editor_state EditorState
+---@param value any
+local function value_to_display_value(editor_state, value)
+  return value
+end
+
+---@param editor_state EditorState
+---@param display_value string
+local function display_value_to_value(editor_state, display_value)
+  return display_value
 end
 
 ---@param editor_state EditorState
@@ -80,6 +94,9 @@ end
 editor_util.add_editor{
   editor_type = "drop_down",
   create = create,
+  validate_display_value = validate_display_value,
+  value_to_display_value = value_to_display_value,
+  display_value_to_value = display_value_to_value,
   read_display_value_from_gui = read_display_value_from_gui,
   write_display_value_to_gui = write_display_value_to_gui,
   get_mixed_display_value = get_mixed_display_value,

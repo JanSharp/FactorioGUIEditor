@@ -30,6 +30,9 @@
 ---@class Editor
 ---@field editor_type EditorType
 ---@field create fun(editor_state: EditorState)
+---@field validate_display_value fun(editor_state: EditorState): boolean, string?
+---@field value_to_display_value fun(editor_state: EditorState, value: any): any
+---@field display_value_to_value fun(editor_state: EditorState, display_value: any): any
 ---@field read_display_value_from_gui fun(editor_state: EditorState)
 ---@field write_display_value_to_gui fun(editor_state: EditorState)
 ---@field get_mixed_display_value fun(editor_state: EditorState): any
@@ -54,6 +57,8 @@
 ---@field player PlayerData
 ---@field editor_params EditorParams
 ---@field editor_data EditorData
+---@field valid_display_value boolean?
+---@field validation_error_msg string?
 ---@field display_value any
 ---@field mixed_values boolean?
 ---@field error_sprite LuaGuiElement?
@@ -82,6 +87,7 @@
 ---@class NodeField
 ---@field field_name string
 ---@field value any
+---@field initialized_display_value boolean?
 ---@field display_value any
 ---@field error_msg string?
 

@@ -45,21 +45,16 @@ local function create(editor_state)
     type = "empty-widget",
     visible = false,
   })
-  local tb_parent = tab
-  if params.can_error or params.optional then
-    tb_parent = gui.create_elem(tab, {
-      type = "flow",
-      direction = "horizontal",
-      style_mods = {
-        vertical_align = "center",
-      },
-    })
-    if params.can_error then
-      editor_util.create_error_sprite(tb_parent, editor_state)
-    end
-    if params.optional then
-      editor_util.create_optional_switch(tb_parent, editor_state)
-    end
+  local tb_parent = gui.create_elem(tab, {
+    type = "flow",
+    direction = "horizontal",
+    style_mods = {
+      vertical_align = "center",
+    },
+  })
+  editor_util.create_error_sprite(tb_parent, editor_state)
+  if params.optional then
+    editor_util.create_optional_switch(tb_parent, editor_state)
   end
   editor_state.text_box_elem = gui.create_elem(tb_parent, {
     type = "text-box",
@@ -75,6 +70,23 @@ local function create(editor_state)
     events = {[defines.events.on_gui_text_changed] = on_text_changed},
   })
   editor_util.create_mixed_values_label(editor_state.text_box_elem, editor_state, true)
+end
+
+---@param editor_state EditorState
+local function validate_display_value(editor_state)
+  return true
+end
+
+---@param editor_state EditorState
+---@param value string
+local function value_to_display_value(editor_state, value)
+  return value
+end
+
+---@param editor_state EditorState
+---@param display_value string
+local function display_value_to_value(editor_state, display_value)
+  return display_value
 end
 
 ---@param editor_state EditorState
@@ -103,6 +115,9 @@ end
 editor_util.add_editor{
   editor_type = "string",
   create = create,
+  validate_display_value = validate_display_value,
+  value_to_display_value = value_to_display_value,
+  display_value_to_value = display_value_to_value,
   read_display_value_from_gui = read_display_value_from_gui,
   write_display_value_to_gui = write_display_value_to_gui,
   get_mixed_display_value = get_mixed_display_value,

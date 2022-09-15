@@ -15,8 +15,9 @@ local function create_editor(player, editor_params, editor_data)
     player = player,
     editor_params = editor_params,
     editor_data = editor_data,
+    valid_display_value = true,
     error_count = 0,
-    error_msgs = editor_params.can_error and {} or nil,
+    error_msgs = {},
   }
 
   local active_editors = player.active_editors[editor_params.window_name]
