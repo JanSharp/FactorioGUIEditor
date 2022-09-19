@@ -235,8 +235,15 @@ end
 
 ---@param editor_state EditorState
 local function write_editor_data(editor_state)
+  local editor = get_editor(editor_state)
   local data = editor_state.editor_data
-  if data.data_type == "missing" then return end
+
+  if data.data_type == "missing" then
+    if editor.on_post_write_editor_data then
+      editor.on_post_write_editor_data(editor_state)
+    end
+    return
+  end
 
   if data.data_type == "node_name"
     or data.data_type == "node_static_variables"
@@ -310,9 +317,15 @@ local function write_editor_data(editor_state)
     end
 
     update_error_sprite(editor_state)
+    if editor.on_post_write_editor_data then
+      editor.on_post_write_editor_data(editor_state)
+    end
     return
   end
 
+  if editor.on_post_write_editor_data then
+    editor.on_post_write_editor_data(editor_state)
+  end
   error("Not implemented '"..data.data_type.."' data type writer.")
 end
 

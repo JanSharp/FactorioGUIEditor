@@ -1,16 +1,38 @@
 {
   "cSpell.words": [
+    "binop",
+    "breakstat",
     "desync",
+    "dostat",
     "elems",
+    "elseblock",
     "factorio",
+    "forlist",
+    "fornum",
+    "funcstat",
+    "gotostat",
+    "ifstat",
+    "iife",
     "jmpc",
+    "localfunc",
     "Localised",
+    "localstat",
+    "loopstat",
     "progressbar",
+    "proto",
     "quickbar",
     "radiobutton",
+    "repeatstat",
+    "retstat",
+    "selfcall",
+    "testblock",
     "timeframe",
+    "unop",
+    "upval",
     "userdata",
-    "visualisation"
+    "vararg",
+    "visualisation",
+    "whilestat"
   ],
   "cSpell.ignorePaths": [
     // default:
@@ -44,7 +66,10 @@
   "Lua.workspace.library": [
     "/mnt/big/portable/factorio/data",
     "/mnt/big/portable/factorio/data/core/lualib",
-    "/mnt/big/portable/factorio/doc-html/runtime-api-lua"
+    "/mnt/big/portable/factorio/doc-html/runtime-api-lua",
+    "mods/phobos/src", // NOTE: download the version of phobos as defined in the info.json, [...]
+    // put it in the `mods/` folder in this project and extract it. That way sumneko.lua can
+    // find all the type definitions for Phobos, like all the ast node types
   ],
   "Lua.runtime.version": "Lua 5.2",
   "Lua.runtime.plugin": "/home/jmpc4/dev/FactorioSumnekoLuaPlugin/FactorioSumnekoLuaPlugin/plugin.lua",

@@ -122,7 +122,7 @@ local function update_inspector(player)
     })
 
     editors.create_editor(player, {
-      editor_type = "string",
+      editor_type = "variables",
       parent_elem = player.inspector_elem,
       window_name = "inspector",
       name = "static_variables",
@@ -136,7 +136,13 @@ local function update_inspector(player)
     })
   end
 
-  gui.create_elem(player.inspector_elem, {type = "line"})
+  gui.create_elem(player.inspector_elem, {
+    type = "line",
+    style_mods = {
+      top_margin = 4,
+      bottom_margin = 4,
+    },
+  })
 
   for _, field in pairs(util.all_used_fields) do
     if bit32.band(field.type_flags, selected_flags) ~= 0

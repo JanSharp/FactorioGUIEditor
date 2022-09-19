@@ -13,6 +13,7 @@ local nodes = depends("__gui-editor__.nodes")
 ---cSpell:ignore lualib
 local factorio_util = require("__core__.lualib.util")
 
+---@type table<ScriptVariables, fun()>
 local compiled_value_lut = {}
 
 ---cSpell:ignore rcon
@@ -75,6 +76,10 @@ local field_name_lut = {
   [variable_types.static] = "static_variables",
   [variable_types.dynamic] = "dynamic_variables",
 }
+
+local function is_builtin_global(name)
+  return fake_env[name] ~= nil
+end
 
 ---@param field_name string
 local function create_script_variables(field_name)
@@ -200,8 +205,6 @@ local function try_set_referenced_variable(player_data, reference, referenced_va
   return true
 end
 
----cSpell:ignore upval
-
 local function add_validation_error(position, context, get_msg)
   position = position and (" at "..(position.line or 0)..":"..(position.column or 0)) or ""
   context.variables.validation_errors[#context.variables.validation_errors+1] = get_msg(position)
@@ -259,7 +262,7 @@ local on_open = {
         local name = try_get_index_into_env(expr, context)
         context.visited_index_nodes[expr] = true
         if name then
-          if fake_env[name] ~= nil then
+          if is_builtin_global(name) then
             add_validation_error(expr.suffix, context, function(position)
               return "Attempt to assign to builtin global '"..name.."'"..position.."."
             end)
@@ -273,7 +276,7 @@ local on_open = {
   ["index"] = function(node, context)
     if context.visited_index_nodes[node] then return end
     local name = try_get_index_into_env(node, context)
-    if name and fake_env[name] == nil then -- only create input_variables for non builtin globals
+    if name and not is_builtin_global(name) then -- only create input_variables for non builtin globals
       context.input_variable_names[name] = true
     end
   end,
@@ -317,6 +320,7 @@ local function compile_variables(player_data, variables)
     return error_code_util.get_message_for_list(errors, "syntax errors", max_errors_shown)
   end
   local ast, parser_errors = parser(variables.display_value, "=("..variables.field_name..")")
+  variables.ast = ast
   if parser_errors[1] then
     return nil, get_message_for_list(parser_errors)
   end
@@ -559,4 +563,5 @@ return {
   create_script_variables = create_script_variables,
   compile_variables = compile_variables,
   restore_variables = restore_variables,
+  is_builtin_global = is_builtin_global,
 }
