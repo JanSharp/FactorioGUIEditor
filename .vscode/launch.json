@@ -24,7 +24,11 @@
         "minimal-no-base-mod": true,
         "JanSharpDevEnv": true,
         "gui-editor": true,
+        "phobos": true,
       },
+      "hookControl": [
+        "gui-editor",
+      ],
 
       // "hookSettings": true,
       // "hookData": true,

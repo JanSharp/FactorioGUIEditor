@@ -4,6 +4,7 @@ local ll = require("__gui-editor__.linked_list")
 local gui = require("__gui-editor__.gui")
 local hierarchy = depends("__gui-editor__.hierarchy")
 local inspector = depends("__gui-editor__.inspector")
+local scripting = depends("__gui-editor__.scripting")
 
 ---@param node Node
 ---@return boolean?
@@ -41,6 +42,8 @@ local function create_node(player, parent_node, type, node_name)
     args.elem_type = "item"
   end
   local elem = parent_node.elem.add(args)
+  local static_variables = scripting.create_script_variables("static_variables")
+  local dynamic_variables = scripting.create_script_variables("dynamic_variables")
   ---@type table<string, NodeField>
   local node_fields = {
     node_name = {
@@ -48,6 +51,8 @@ local function create_node(player, parent_node, type, node_name)
       value = node_name,
       display_value = node_name,
     },
+    static_variables = static_variables,
+    dynamic_variables = dynamic_variables,
   }
   for _, field in pairs(util.fields_for_type[type]) do
     if field.name == "mouse_button_filter" then
@@ -81,7 +86,11 @@ local function create_node(player, parent_node, type, node_name)
     elem = elem,
     node_fields = node_fields,
     children = ll.new_list(false),
+    static_variables = static_variables,
+    dynamic_variables = dynamic_variables,
   }
+  static_variables.node = node
+  dynamic_variables.node = node
   player.nodes_by_id[id] = node
   node.parent = parent_node
   ll.append(parent_node.children, node)

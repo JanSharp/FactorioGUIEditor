@@ -81,3 +81,12 @@ styles.gui_editor_node_cursor = {
     base = {position = {431 + 17 * 2 + 8, 47 + 8}, width = 1, height = 1},
   },
 }
+
+data:extend{
+  {
+    type = "font",
+    name = "default-mono",
+    from = "default-mono",
+    size = 14,
+  },
+}

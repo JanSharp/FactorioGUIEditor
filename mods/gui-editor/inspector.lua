@@ -105,6 +105,7 @@ local function update_inspector(player)
     for node in pairs(player.selected_nodes) do
       all_nodes[#all_nodes+1] = node
     end
+
     editors.create_editor(player, {
       editor_type = "string",
       parent_elem = player.inspector_elem,
@@ -118,6 +119,20 @@ local function update_inspector(player)
       data_type = "node_name",
       nodes_to_edit = all_nodes,
       requires_rebuild = false,
+    })
+
+    editors.create_editor(player, {
+      editor_type = "string",
+      parent_elem = player.inspector_elem,
+      window_name = "inspector",
+      name = "static_variables",
+      description = nil,
+      readonly = false,
+      optional = false,
+      can_error = false,
+    }, {
+      data_type = "node_static_variables",
+      nodes_to_edit = all_nodes,
     })
   end
 

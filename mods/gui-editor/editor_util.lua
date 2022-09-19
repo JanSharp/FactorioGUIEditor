@@ -2,6 +2,7 @@
 local util = require("__gui-editor__.util")
 local gui = require("__gui-editor__.gui")
 local nodes = depends("__gui-editor__.nodes")
+local scripting = depends("__gui-editor__.scripting")
 
 ---@type table<EditorType, Editor>
 local editors = {}
@@ -89,7 +90,10 @@ local function update_error_sprite(editor_state)
   if editor_state.error_count ~= 0 then
     local data = editor_state.editor_data
     local node_count
-    if data.data_type == "node_name" or data.data_type == "node_field" then
+    if data.data_type == "node_name"
+      or data.data_type == "node_static_variables"
+      or data.data_type == "node_field"
+    then
       node_count = #data.nodes_to_edit
     else
       error("getting the total count of selected data for the data type '"..data.data_type.."' is \z
@@ -186,7 +190,10 @@ local function read_editor_data(editor_state)
     return
   end
 
-  if data.data_type == "node_name" or data.data_type == "node_field" then
+  if data.data_type == "node_name"
+    or data.data_type == "node_static_variables"
+    or data.data_type == "node_field"
+  then
     local field_name = editor_state.editor_params.name
     local display_value
     local not_first
@@ -231,7 +238,10 @@ local function write_editor_data(editor_state)
   local data = editor_state.editor_data
   if data.data_type == "missing" then return end
 
-  if data.data_type == "node_name" or data.data_type == "node_field" then
+  if data.data_type == "node_name"
+    or data.data_type == "node_static_variables"
+    or data.data_type == "node_field"
+  then
     local set_value
     local can_error = editor_state.editor_params.can_error
     local field_name = editor_state.editor_params.name
@@ -250,7 +260,14 @@ local function write_editor_data(editor_state)
         node.node_fields.node_name.value = value
         node.hierarchy_button.caption = value
       end
-    else
+    elseif data.data_type == "node_static_variables" then
+      ---@param node Node
+      function set_value(node)
+        -- TODO: this should be done by the editor
+        local success, msg = scripting.compile_variables(editor_state.player, node.static_variables)
+        set_single_error_state(editor_state, node, field_name, msg)
+      end
+    elseif data.data_type == "node_field" then
       ---@param node Node
       function set_value(node)
         local node_field = node.node_fields[field_name]
@@ -295,6 +312,8 @@ local function write_editor_data(editor_state)
     update_error_sprite(editor_state)
     return
   end
+
+  error("Not implemented '"..data.data_type.."' data type writer.")
 end
 
 ---@param editor_state EditorState

@@ -65,6 +65,7 @@ local function create(editor_state)
     style_mods = {
       width = 0,
       horizontally_stretchable = true,
+      font = "default-mono",
     },
     tags = editor_util.get_tags(editor_state),
     events = {[defines.events.on_gui_text_changed] = on_text_changed},
