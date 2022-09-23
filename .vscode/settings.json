@@ -71,6 +71,12 @@
     // put it in the `mods/` folder in this project and extract it. That way sumneko.lua can
     // find all the type definitions for Phobos, like all the ast node types
   ],
+  "Lua.runtime.pluginArgs": [
+    "--ignore",
+    "/mnt/big/portable/factorio/data/base/prototypes",
+    "/mnt/big/portable/factorio/data/core/prototypes",
+    "/mnt/big/portable/factorio/doc-html/runtime-api-lua",
+  ],
   "Lua.runtime.version": "Lua 5.2",
   "Lua.runtime.plugin": "/home/jmpc4/dev/FactorioSumnekoLuaPlugin/FactorioSumnekoLuaPlugin/plugin.lua",
   "editor.rulers": [100],
