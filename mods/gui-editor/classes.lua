@@ -10,6 +10,8 @@ global = {}
 ---@field player LuaPlayer
 ---@field background_rendering uint64
 ---@field windows table<string, WindowState[]>
+---@field windows_by_id table<integer, WindowState>
+---@field next_window_id integer
 ---@field inspector_window_elem LuaGuiElement
 ---@field inspector_elem LuaGuiElement
 ---@field active_editors table<string, table<string, EditorState>> window_name => (editor) name => editor_state
@@ -43,8 +45,22 @@ global = {}
 
 ---@class WindowState
 ---@field player PlayerData
+---@field id integer
 ---@field frame_elem LuaGuiElement
 ---@field header_elem LuaGuiElement
+---@field draggable_space LuaGuiElement
+---@field toggle_resize_button LuaGuiElement
+---resize frames
+---@field left_resize_frame LuaGuiElement
+---@field right_resize_frame LuaGuiElement
+---@field top_resize_frame LuaGuiElement
+---@field bottom_resize_frame LuaGuiElement
+---@field top_left_resize_frame LuaGuiElement
+---@field top_right_resize_frame LuaGuiElement
+---@field bottom_left_resize_frame LuaGuiElement
+---@field bottom_right_resize_frame LuaGuiElement
+---end of resize frames
+---@field resizing boolean
 ---@field size Size
 ---
 ---@field hierarchy_elem LuaGuiElement @ for hierarchy windows

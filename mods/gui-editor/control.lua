@@ -95,6 +95,8 @@ script.on_event(defines.events.on_player_created, function(event)
     player = player,
     background_rendering = background_rendering,
     windows = {},
+    windows_by_id = {},
+    next_window_id = 1,
     -- set by the create calls below
     -- inspector_window_elem = nil,
     -- inspector_elem = nil,

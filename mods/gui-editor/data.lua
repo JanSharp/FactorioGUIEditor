@@ -82,6 +82,16 @@ styles.gui_editor_node_cursor = {
   },
 }
 
+styles.gui_editor_invisible_frame = {
+  type = "frame_style",
+  parent = "frame",
+  top_padding  = 0,
+  right_padding = 0,
+  bottom_padding = 0,
+  left_padding = 0,
+  graphical_set = {},
+}
+
 data:extend{
   {
     type = "font",
