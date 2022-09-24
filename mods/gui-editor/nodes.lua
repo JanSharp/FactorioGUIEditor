@@ -81,7 +81,7 @@ local function create_node(player, parent_node, type, node_name)
     id = id,
     type_flag = util.gui_elem_type_flags[type],
     node_name = node_name,
-    -- set in update_hierarchy
+    -- set in update_hierarchies
     -- flat_index = nil,
     elem = elem,
     node_fields = node_fields,
@@ -159,7 +159,7 @@ local function finish_changing_selection(player)
     if next(player.selected_nodes) and not next(player.cursor_nodes) then
       error("Invalid selection: When there are selected nodes there must be at least one cursor node.")
     end
-    hierarchy.update_hierarchy(player)
+    hierarchy.update_hierarchies(player)
     inspector.update_inspector(player)
     player.dirty_selection = false
   end

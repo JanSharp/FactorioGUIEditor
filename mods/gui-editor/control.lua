@@ -47,13 +47,13 @@ local function update_window_sizes(player)
   local resolution = player.player.display_resolution
   local height = resolution.height
   player.inspector_window_elem.style.height = height
-  player.hierarchy_window_elem.style.height = height
+  -- player.hierarchy_window_elem.style.height = height
   local inspector_width = math.floor(resolution.width * 0.3)
   player.inspector_window_elem.style.width = inspector_width
   player.inspector_window_elem.location = {resolution.width - inspector_width, 0}
   local hierarchy_width = math.floor((inspector_width / 0.3) * 0.2)
-  player.hierarchy_window_elem.style.width = hierarchy_width
-  player.hierarchy_window_elem.location = {resolution.width - inspector_width - hierarchy_width, 0}
+  -- player.hierarchy_window_elem.style.width = hierarchy_width
+  -- player.hierarchy_window_elem.location = {resolution.width - inspector_width - hierarchy_width, 0}
 end
 
 script.on_event(defines.events.on_player_display_resolution_changed, function(event)
@@ -94,10 +94,9 @@ script.on_event(defines.events.on_player_created, function(event)
   local player_data = {
     player = player,
     background_rendering = background_rendering,
+    windows = {},
     -- set by the create calls below
-    -- hierarchy_window_elem = nil,
     -- inspector_window_elem = nil,
-    -- hierarchy_elem = nil,
     -- inspector_elem = nil,
     main_node = {
       id = 0,

@@ -9,9 +9,8 @@ global = {}
 ---@class PlayerData
 ---@field player LuaPlayer
 ---@field background_rendering uint64
----@field hierarchy_window_elem LuaGuiElement
+---@field windows table<string, WindowState[]>
 ---@field inspector_window_elem LuaGuiElement
----@field hierarchy_elem LuaGuiElement
 ---@field inspector_elem LuaGuiElement
 ---@field active_editors table<string, table<string, EditorState>> window_name => (editor) name => editor_state
 -- ---@field inspector_editors table<string, EditorData>
@@ -33,6 +32,22 @@ global = {}
 ---| "string"
 ---| "drop_down"
 ---| "variables"
+
+---@alias Size {width: integer, height: integer}
+
+---@class Window
+---@field window_type string @ unique identifier
+---@field title string @ display name/title
+---@field on_create fun(window_state: WindowState)
+---@field initial_size Size
+
+---@class WindowState
+---@field player PlayerData
+---@field frame_elem LuaGuiElement
+---@field header_elem LuaGuiElement
+---@field size Size
+---
+---@field hierarchy_elem LuaGuiElement @ for hierarchy windows
 
 ---100% static
 ---@class Editor

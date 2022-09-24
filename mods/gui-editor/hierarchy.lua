@@ -4,8 +4,16 @@ local gui = require("__gui-editor__.gui")
 local nodes = depends("__gui-editor__.nodes")
 local inspector = depends("__gui-editor__.inspector")
 local restart_manager = require("__gui-editor__.restart_manager")
+local window_manager = require("__gui-editor__.window_manager")
 
 local update_hierarchy
+
+---@param player PlayerData
+local function update_hierarchies(player)
+  for _, window_state in pairs(player.windows["hierarchy"]) do
+    update_hierarchy(window_state)
+  end
+end
 
 ---@param player PlayerData
 ---@param tags any
@@ -120,16 +128,17 @@ local on_hierarchy_row_click = gui.register_handler("on_hierarchy_row_click", fu
       end
 
       -- TODO: only update if it is dirty
-      update_hierarchy(player)
+      update_hierarchies(player)
       -- TODO: only update inspector if the "is_root" state changed of any node.
       inspector.update_inspector(player)
     end
   end
 end)
 
----@param player PlayerData
-function update_hierarchy(player)
-  for _, child in pairs(player.hierarchy_elem.children) do
+---@param window_state WindowState
+function update_hierarchy(window_state)
+  local player = window_state.player
+  for _, child in pairs(window_state.hierarchy_elem.children) do
     child.destroy()
   end
   local flat_index = 1
@@ -138,7 +147,7 @@ function update_hierarchy(player)
   ---@param node Node
   ---@param depth integer
   local function create_row(node, depth)
-    local _, inner = gui.create_elem(player.hierarchy_elem, {
+    local _, inner = gui.create_elem(window_state.hierarchy_elem, {
       type = "flow",
       direction = "horizontal",
       style_mods = {padding = 0, margin = 0, left_padding = depth * 8},
@@ -184,7 +193,7 @@ function update_hierarchy(player)
     create_row(main_node, 0)
     main_node = main_node.next
   end
-  gui.create_elem(player.hierarchy_elem, {
+  gui.create_elem(window_state.hierarchy_elem, {
     type = "empty-widget",
     style_mods = {
       horizontally_stretchable = true,
@@ -244,122 +253,124 @@ local on_deselect_click = gui.register_handler("on_deselect_click", function(pla
   nodes.finish_changing_selection(player)
 end)
 
----@param player PlayerData
-local function create_hierarchy(player)
-  local hierarchy_window_elem, hierarchy_inner = gui.create_elem(player.player.gui.screen, {
-    type = "frame",
-    direction = "vertical",
-    caption = "Hierarchy",
-    children = {
-      {
-        type = "frame",
-        direction = "vertical",
-        style = "inside_shallow_frame",
-        style_mods = {
-          horizontally_stretchable = true,
-          vertically_stretchable = true,
+window_manager.register_window{
+  window_type = "hierarchy",
+  title = "Hierarchy",
+  initial_size = {width = 300, height = 500},
+
+  ---@param window_state WindowState
+  on_create = function(window_state)
+    local _, hierarchy_inner = gui.create_elem(window_state.frame_elem, {
+      type = "frame",
+      direction = "vertical",
+      style = "inside_shallow_frame",
+      style_mods = {
+        horizontally_stretchable = true,
+        vertically_stretchable = true,
+      },
+      children = {
+        {
+          type = "flow",
+          direction = "horizontal",
+          style_mods = {
+            top_padding = 8,
+            left_padding = 8,
+            right_padding = 8,
+          },
+          children = {
+            {
+              type = "drop-down",
+              items = util.gui_elem_types,
+              style_mods = {
+                horizontally_stretchable = true,
+                top_padding = 1,
+                bottom_padding = 0,
+              },
+              events = {[defines.events.on_gui_selection_state_changed] = on_new_drop_down},
+              children = {
+                {
+                  type = "label",
+                  caption = "Create new ...",
+                  style_mods = {
+                    font = "default-semibold",
+                    font_color = {0, 0, 0},
+                  },
+                  elem_mods = {ignored_by_interaction = true},
+                },
+              },
+            },
+            -- NOTE: this button should be a context aware key bind
+            {
+              type = "sprite-button",
+              sprite = "utility/trash_white",
+              style_mods = {
+                width = 28,
+                height = 28,
+              },
+              tooltip = "Delete selected nodes and their children.",
+              events = {[defines.events.on_gui_click] = on_delete_click},
+            },
+            -- NOTE: this button should be somewhere else. Probably in the inspector for styles or something
+            {
+              type = "sprite-button",
+              sprite = "restart_required",
+              style_mods = {
+                width = 28,
+                height = 28,
+              },
+              tooltip = {"gui.restart"},
+              events = {[defines.events.on_gui_click] = on_restart_click},
+            },
+          },
         },
-        children = {
-          {
-            type = "flow",
-            direction = "horizontal",
-            style_mods = {
-              top_padding = 8,
-              left_padding = 8,
-              right_padding = 8,
-            },
-            children = {
-              {
-                type = "drop-down",
-                items = util.gui_elem_types,
-                style_mods = {
-                  horizontally_stretchable = true,
-                  top_padding = 1,
-                  bottom_padding = 0,
-                },
-                events = {[defines.events.on_gui_selection_state_changed] = on_new_drop_down},
-                children = {
-                  {
-                    type = "label",
-                    caption = "Create new ...",
-                    style_mods = {
-                      font = "default-semibold",
-                      font_color = {0, 0, 0},
-                    },
-                    elem_mods = {ignored_by_interaction = true},
-                  },
-                },
-              },
-              -- NOTE: this button should be a context aware key bind
-              {
-                type = "sprite-button",
-                sprite = "utility/trash_white",
-                style_mods = {
-                  width = 28,
-                  height = 28,
-                },
-                tooltip = "Delete selected nodes and their children.",
-                events = {[defines.events.on_gui_click] = on_delete_click},
-              },
-              -- NOTE: this button should be somewhere else. Probably in the inspector for styles or something
-              {
-                type = "sprite-button",
-                sprite = "restart_required",
-                style_mods = {
-                  width = 28,
-                  height = 28,
-                },
-                tooltip = {"gui.restart"},
-                events = {[defines.events.on_gui_click] = on_restart_click},
-              },
-            },
+        {
+          type = "empty-widget",
+          style_mods = {height = 6};
+        },
+        {
+          type = "frame",
+          direction = "vertical",
+          style = "inside_deep_frame",
+          style_mods = {
+            horizontally_stretchable = true,
+            vertically_stretchable = true,
           },
-          {
-            type = "empty-widget",
-            style_mods = {height = 6};
-          },
-          {
-            type = "frame",
-            direction = "vertical",
-            style = "inside_deep_frame",
-            style_mods = {
-              horizontally_stretchable = true,
-              vertically_stretchable = true,
-            },
-            children = {
-              {
-                type = "scroll-pane",
-                style_mods = {
-                  horizontally_stretchable = true,
-                  vertically_stretchable = true,
-                  padding = 4,
-                },
-                children = {
-                  {
-                    type = "flow",
-                    direction = "vertical",
-                    name = "hierarchy",
-                    style_mods = {
-                      vertical_spacing = 0,
-                    },
-                    events = {[defines.events.on_gui_click] = on_deselect_click},
+          children = {
+            {
+              type = "scroll-pane",
+              style_mods = {
+                horizontally_stretchable = true,
+                vertically_stretchable = true,
+                padding = 4,
+              },
+              children = {
+                {
+                  type = "flow",
+                  direction = "vertical",
+                  name = "hierarchy",
+                  style_mods = {
+                    vertical_spacing = 0,
                   },
+                  events = {[defines.events.on_gui_click] = on_deselect_click},
                 },
               },
             },
           },
         },
       },
-    },
-  })
-  ---@cast hierarchy_inner -?
+    })
+    ---@cast hierarchy_inner -?
+    window_state.hierarchy_elem = hierarchy_inner.hierarchy
+  end,
+}
 
-  player.hierarchy_window_elem = hierarchy_window_elem
-  player.hierarchy_elem = hierarchy_inner.hierarchy
+---@param player PlayerData
+local function create_hierarchy(player)
+  window_manager.create_window(player, "hierarchy")
 end
 
 ---@class __gui-editor__.hierarchy
 return {
-  update_hierarchy = update_hierarchy,
+  update_hierarchies = update_hierarchies,
   create_hierarchy = create_hierarchy,
 }
