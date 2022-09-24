@@ -76,6 +76,7 @@ local on_resize_frame_location_changed = gui.register_handler(
   ---@param event EventData.on_gui_location_changed
   function(player, tags, event)
     local window_state = player.windows_by_id[tags.window_id]
+    local window = windows[window_state.window_type]
 
     if tags.movement then
       window_state.frame_elem.location = {
@@ -85,28 +86,36 @@ local on_resize_frame_location_changed = gui.register_handler(
     end
 
     if tags.right then
-      window_state.size.width = event.element.location.x + 10 - window_state.frame_elem.location.x
-      window_state.frame_elem.style.width = window_state.size.width
+      local width = event.element.location.x + 10 - window_state.frame_elem.location.x
+      width = math.max(window.minimal_size.width, width)
+      window_state.size.width = width
+      window_state.frame_elem.style.width = width
     elseif tags.left then
-      window_state.size.width = window_state.frame_elem.location.x + window_state.size.width
-        - (event.element.location.x + 10)
-      window_state.frame_elem.style.width = window_state.size.width
+      local top_right_x = window_state.frame_elem.location.x + window_state.size.width
+      local width = top_right_x - (event.element.location.x + 10)
+      width = math.max(window.minimal_size.width, width)
+      window_state.size.width = width
+      window_state.frame_elem.style.width = width
       window_state.frame_elem.location = {
-        x = event.element.location.x + 10,
+        x = top_right_x - width,
         y = window_state.frame_elem.location.y,
       }
     end
 
     if tags.bottom then
-      window_state.size.height = event.element.location.y + 10 - window_state.frame_elem.location.y
-      window_state.frame_elem.style.height = window_state.size.height
+      local height = event.element.location.y + 10 - window_state.frame_elem.location.y
+      height = math.max(window.minimal_size.height, height)
+      window_state.size.height = height
+      window_state.frame_elem.style.height = height
     elseif tags.top then
-      window_state.size.height = window_state.frame_elem.location.y + window_state.size.height
-        - (event.element.location.y + 10)
-      window_state.frame_elem.style.height = window_state.size.height
+      local bottom_left_y = window_state.frame_elem.location.y + window_state.size.height
+      local height = bottom_left_y - (event.element.location.y + 10)
+      height = math.max(window.minimal_size.height, height)
+      window_state.size.height = height
+      window_state.frame_elem.style.height = height
       window_state.frame_elem.location = {
         x = window_state.frame_elem.location.x,
-        y = event.element.location.y + 10,
+        y = bottom_left_y - height,
       }
     end
 
@@ -246,6 +255,7 @@ local function create_window(player, window_type)
   ---@type WindowState
   local window_state = {
     player = player,
+    window_type = window_type,
     id = window_id,
     frame_elem = frame,
     header_elem = inner.header_flow,

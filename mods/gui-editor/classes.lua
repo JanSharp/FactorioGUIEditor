@@ -42,9 +42,11 @@ global = {}
 ---@field title string @ display name/title
 ---@field on_create fun(window_state: WindowState)
 ---@field initial_size Size
+---@field minimal_size Size
 
 ---@class WindowState
 ---@field player PlayerData
+---@field window_type string
 ---@field id integer
 ---@field frame_elem LuaGuiElement
 ---@field header_elem LuaGuiElement

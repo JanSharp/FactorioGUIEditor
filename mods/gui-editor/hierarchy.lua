@@ -257,6 +257,7 @@ window_manager.register_window{
   window_type = "hierarchy",
   title = "Hierarchy",
   initial_size = {width = 300, height = 500},
+  minimal_size = {width = 250, height = 100},
 
   ---@param window_state WindowState
   on_create = function(window_state)
