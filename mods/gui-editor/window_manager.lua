@@ -76,34 +76,40 @@ local on_resize_frame_location_changed = gui.register_handler(
   ---@param event EventData.on_gui_location_changed
   function(player, tags, event)
     local window_state = player.windows_by_id[tags.window_id]
+
     if tags.movement then
       window_state.frame_elem.location = {
         x = event.element.location.x - 10,
         y = event.element.location.y - 10,
       }
     end
+
     if tags.right then
       window_state.size.width = event.element.location.x + 10 - window_state.frame_elem.location.x
       window_state.frame_elem.style.width = window_state.size.width
     elseif tags.left then
-      window_state.size.width = window_state.frame_elem.location.x + window_state.size.width - (event.element.location.x + 10)
+      window_state.size.width = window_state.frame_elem.location.x + window_state.size.width
+        - (event.element.location.x + 10)
       window_state.frame_elem.style.width = window_state.size.width
       window_state.frame_elem.location = {
         x = event.element.location.x + 10,
         y = window_state.frame_elem.location.y,
       }
     end
+
     if tags.bottom then
       window_state.size.height = event.element.location.y + 10 - window_state.frame_elem.location.y
       window_state.frame_elem.style.height = window_state.size.height
     elseif tags.top then
-      window_state.size.height = window_state.frame_elem.location.y + window_state.size.height - (event.element.location.y + 10)
+      window_state.size.height = window_state.frame_elem.location.y + window_state.size.height
+        - (event.element.location.y + 10)
       window_state.frame_elem.style.height = window_state.size.height
       window_state.frame_elem.location = {
         x = window_state.frame_elem.location.x,
         y = event.element.location.y + 10,
       }
     end
+
     snap_resize_frames(window_state)
   end
 )
@@ -154,15 +160,16 @@ local on_resize_toggle_click = gui.register_handler(
     draggable_space_style.right_margin = 4
 
     if window_state.resizing then
-      window_state.movement_frame = create_invisible_frame(window_state, {movement = true})
-      window_state.left_resize_frame = create_invisible_frame(window_state, {left = true})
-      window_state.right_resize_frame = create_invisible_frame(window_state, {right = true})
-      window_state.top_resize_frame = create_invisible_frame(window_state, {top = true})
-      window_state.bottom_resize_frame = create_invisible_frame(window_state, {bottom = true})
-      window_state.top_left_resize_frame = create_invisible_frame(window_state, {top = true, left = true})
-      window_state.top_right_resize_frame = create_invisible_frame(window_state, {top = true, right = true})
-      window_state.bottom_left_resize_frame = create_invisible_frame(window_state, {bottom = true, left = true})
-      window_state.bottom_right_resize_frame = create_invisible_frame(window_state, {bottom = true, right = true})
+      local create = create_invisible_frame
+      window_state.movement_frame = create(window_state, {movement = true})
+      window_state.left_resize_frame = create(window_state, {left = true})
+      window_state.right_resize_frame = create(window_state, {right = true})
+      window_state.top_resize_frame = create(window_state, {top = true})
+      window_state.bottom_resize_frame = create(window_state, {bottom = true})
+      window_state.top_left_resize_frame = create(window_state, {top = true, left = true})
+      window_state.top_right_resize_frame = create(window_state, {top = true, right = true})
+      window_state.bottom_left_resize_frame = create(window_state, {bottom = true, left = true})
+      window_state.bottom_right_resize_frame = create(window_state, {bottom = true, right = true})
       snap_resize_frames(window_state)
     else
       window_state.left_resize_frame.destroy()
