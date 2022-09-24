@@ -18,6 +18,15 @@ local function snap_resize_frames(window_state)
   ---@cast location -nil
   local size = window_state.size
 
+  window_state.movement_frame.location = {
+    x = location.x + 10,
+    y = location.y + 10,
+  }
+  window_state.movement_frame.style.size = {
+    size.width - 20 - (24 + 4) * 2,
+    28,
+  }
+
   window_state.top_left_resize_frame.location = {
     x = location.x - 10,
     y = location.y - 10,
@@ -67,6 +76,12 @@ local on_resize_frame_location_changed = gui.register_handler(
   ---@param event EventData.on_gui_location_changed
   function(player, tags, event)
     local window_state = player.windows_by_id[tags.window_id]
+    if tags.movement then
+      window_state.frame_elem.location = {
+        x = event.element.location.x - 10,
+        y = event.element.location.y - 10,
+      }
+    end
     if tags.right then
       window_state.size.width = event.element.location.x + 10 - window_state.frame_elem.location.x
       window_state.frame_elem.style.width = window_state.size.width
@@ -139,6 +154,7 @@ local on_resize_toggle_click = gui.register_handler(
     draggable_space_style.right_margin = 4
 
     if window_state.resizing then
+      window_state.movement_frame = create_invisible_frame(window_state, {movement = true})
       window_state.left_resize_frame = create_invisible_frame(window_state, {left = true})
       window_state.right_resize_frame = create_invisible_frame(window_state, {right = true})
       window_state.top_resize_frame = create_invisible_frame(window_state, {top = true})
