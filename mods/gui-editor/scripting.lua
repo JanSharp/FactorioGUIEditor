@@ -330,13 +330,11 @@ local function compile_variables(player_data, variables)
   end
 
   -- analyze
-  local context = {
-    on_open = on_open,
-    variables = variables,
-    visited_index_nodes = {},
-    input_variable_names = {},
-    output_variable_names = {},
-  }
+  local context = ast_walker.new_context(on_open, nil)
+  context.variables = variables
+  context.visited_index_nodes = {}
+  context.input_variable_names = {}
+  context.output_variable_names = {}
   ast_walker.walk_scope(ast, context)
   if variables.validation_errors[1] then
     local msg = "Invalid script:\n"..table.concat(variables.validation_errors, "\n")

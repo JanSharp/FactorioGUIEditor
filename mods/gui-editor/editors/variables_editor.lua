@@ -112,6 +112,7 @@ local function format(main)
     end
   end
 
+  ---@param token_node Token|AstTokenNode|AstInvalidNode
   function add_token(token_node)
     if not token_node then
       return
@@ -180,9 +181,23 @@ local function format(main)
     end
   end
 
-  function add_invalid(node)
+  local function add_invalid_without_wrappers(node)
     for _, consumed_node in ipairs(node.consumed_nodes) do
       add_node(consumed_node)
+    end
+  end
+
+  function add_invalid(node)
+    if node.force_single_result then
+      for i = #node.src_paren_wrappers, 1, -1 do
+        add_token(node.src_paren_wrappers[i].open_paren_token)
+      end
+      add_invalid_without_wrappers(node)
+      for i = 1, #node.src_paren_wrappers do
+        add_token(node.src_paren_wrappers[i].close_paren_token)
+      end
+    else
+      add_invalid_without_wrappers(node)
     end
   end
 
@@ -280,6 +295,11 @@ local function format(main)
         if node.suffix.node_type == "string" and node.suffix.src_is_ident then
           add_token(node.dot_token)
           add_colored_suffix()
+        elseif node.suffix.node_type == "invalid" then
+          if node.dot_token then add_token(node.dot_token) end
+          if node.suffix_open_token then add_token(node.suffix_open_token) end
+          add_invalid(node.suffix)
+          if node.suffix_close_token then add_token(node.suffix_close_token) end
         else
           add_token(node.suffix_open_token)
           add_exp(node.suffix)
@@ -375,7 +395,7 @@ local function format(main)
 
     call = call,
 
-    invalid = add_invalid,
+    invalid = add_invalid_without_wrappers,
 
     ---@param node AstInlineIIFE
     inline_iife = function(node)
@@ -409,7 +429,7 @@ local function format(main)
         end
       end
       add_exp(node)
-       if separator_tokens and separator_tokens[i] then
+      if separator_tokens and separator_tokens[i] then
         add_token(separator_tokens[i])
       end
     end
@@ -422,6 +442,7 @@ local function format(main)
     end
   end
 
+  ---@type table<AstStatement|AstTestBlock|AstElseBlock, fun(node: AstStatement|AstTestBlock|AstElseBlock)>
   local stats = {
     ---@param node AstEmpty
     empty = function(node)
@@ -430,9 +451,11 @@ local function format(main)
     ---@param node AstIfStat
     ifstat = function(node)
       for _, test_block in ipairs(node.ifs) do
+        ---@diagnostic disable-next-line:param-type-mismatch
         add_stat(test_block)
       end
       if node.elseblock then
+        ---@diagnostic disable-next-line:param-type-mismatch
         add_stat(node.elseblock)
       end
       add_token(node.end_token)
@@ -571,22 +594,26 @@ local function format(main)
     end,
   }
 
-  ---@param node AstStatement
+  ---@param node AstStatement|AstTestBlock|AstElseBlock
   function add_stat(node)
     stats[node.node_type](node)
   end
 
   ---@param node AstScope
   function add_scope(node)
-    ---@diagnostic disable-next-line: undefined-field
-    local elem = node.body.first
-    while elem do
-      add_stat(elem.value)
-      elem = elem.next
+    local stat = node.body.first
+    while stat do
+      add_stat(stat--[[@as AstStatement]])
+      stat = stat.next
     end
   end
 
   add_colored(colors.white, function()
+    if main.shebang_line then
+      add_colored(colors.comment, function()
+        add(main.shebang_line)
+      end)
+    end
     add_scope(main)
     add_leading(main.eof_token)
   end)
