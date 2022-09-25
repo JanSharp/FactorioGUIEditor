@@ -12,6 +12,17 @@ local function register_window(window)
   windows[window.window_type] = window
 end
 
+---@param player PlayerData
+---@param window_type string
+local function get_windows(player, window_type)
+  local window_states = player.windows[window_type]
+  if not window_states then
+    window_states = {}
+    player.windows[window_type] = window_states
+  end
+  return window_states
+end
+
 ---@param window_state WindowState
 local function snap_resize_frames(window_state)
   local location = window_state.frame_elem.location
@@ -270,11 +281,7 @@ local function create_window(player, window_type)
 
   player.windows_by_id[window_id] = window_state
 
-  local window_states = player.windows[window_type]
-  if not window_states then
-    window_states = {}
-    player.windows[window_type] = window_states
-  end
+  local window_states = get_windows(player, window_type)
   window_states[#window_states+1] = window_state
 
   window.on_create(window_state)
@@ -284,5 +291,6 @@ end
 
 return {
   register_window = register_window,
+  get_windows = get_windows,
   create_window = create_window,
 }

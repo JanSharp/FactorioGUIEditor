@@ -10,7 +10,7 @@ local update_hierarchy
 
 ---@param player PlayerData
 local function update_hierarchies(player)
-  for _, window_state in pairs(player.windows["hierarchy"]) do
+  for _, window_state in pairs(window_manager.get_windows(player, "hierarchy")) do
     update_hierarchy(window_state)
   end
 end

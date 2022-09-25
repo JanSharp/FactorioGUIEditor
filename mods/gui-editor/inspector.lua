@@ -160,7 +160,7 @@ end
 
 ---@param player PlayerData
 local function update_inspectors(player)
-  for _, window_state in pairs(player.windows["inspector"]) do
+  for _, window_state in pairs(window_manager.get_windows(player, "inspector")) do
     update_inspector(window_state)
   end
 end
