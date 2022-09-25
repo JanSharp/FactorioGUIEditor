@@ -4,6 +4,7 @@ local gui = require("__gui-editor__.gui")
 local hierarchy = depends("__gui-editor__.hierarchy")
 local nodes = depends("__gui-editor__.nodes")
 local editors = require("__gui-editor__.editors")
+local window_manager = require("__gui-editor__.window_manager")
 
 local type_mapping = {
   ["boolean"] = "boolean",
@@ -14,14 +15,14 @@ local type_mapping = {
   ["int"] = "number",
 }
 
----@param player PlayerData
+---@param window_state WindowState
 ---@param field Field
 ---@param editor_type EditorType
 ---@return EditorParams
-local function get_base_params_for_field(player, field, editor_type)
+local function get_base_params_for_field(window_state, field, editor_type)
   return {
     editor_type = editor_type,
-    parent_elem = player.inspector_elem,
+    parent_elem = window_state.inspector_elem,
     window_name = "inspector",
     name = field.name,
     description = field.description,
@@ -31,12 +32,13 @@ local function get_base_params_for_field(player, field, editor_type)
   }
 end
 
----@param player PlayerData
+---@param window_state WindowState
 ---@param field Field
-local function create_inspector_field_editor(player, field)
+local function create_inspector_field_editor(window_state, field)
+  local player = window_state.player
   local editor_type = type_mapping[field.type]
   if not editor_type then
-    local params = get_base_params_for_field(player, field, "missing")
+    local params = get_base_params_for_field(window_state, field, "missing")
     params.missing_field = field
     editors.create_editor(player, params, {data_type = "missing"})
     return
@@ -50,7 +52,7 @@ local function create_inspector_field_editor(player, field)
   end
 
   if field.name == "direction" then
-    local params = get_base_params_for_field(player, field, "drop_down")
+    local params = get_base_params_for_field(window_state, field, "drop_down")
     params.readonly = false
     params.can_error = false
     params.drop_down_items = {"horizontal", "vertical"}
@@ -64,7 +66,7 @@ local function create_inspector_field_editor(player, field)
   end
 
   if field.name == "column_count" then
-    local params = get_base_params_for_field(player, field, "number")
+    local params = get_base_params_for_field(window_state, field, "number")
     params.readonly = false
     params.can_error = false
     editors.create_editor(player, params, {
@@ -75,16 +77,17 @@ local function create_inspector_field_editor(player, field)
     return
   end
 
-  editors.create_editor(player, get_base_params_for_field(player, field, editor_type), {
+  editors.create_editor(player, get_base_params_for_field(window_state, field, editor_type), {
     data_type = "node_field",
     nodes_to_edit = nodes_to_edit,
     requires_rebuild = false,
   })
 end
 
----@param player PlayerData
-local function update_inspector(player)
-  for _, child in pairs(player.inspector_elem.children) do
+---@param window_state WindowState
+local function update_inspector(window_state)
+  local player = window_state.player
+  for _, child in pairs(window_state.inspector_elem.children) do
     child.destroy()
   end
   if not next(player.selected_nodes) then return end
@@ -108,7 +111,7 @@ local function update_inspector(player)
 
     editors.create_editor(player, {
       editor_type = "string",
-      parent_elem = player.inspector_elem,
+      parent_elem = window_state.inspector_elem,
       window_name = "inspector",
       name = "node_name",
       description = nil,
@@ -123,7 +126,7 @@ local function update_inspector(player)
 
     editors.create_editor(player, {
       editor_type = "variables",
-      parent_elem = player.inspector_elem,
+      parent_elem = window_state.inspector_elem,
       window_name = "inspector",
       name = "static_variables",
       description = nil,
@@ -136,7 +139,7 @@ local function update_inspector(player)
     })
   end
 
-  gui.create_elem(player.inspector_elem, {
+  gui.create_elem(window_state.inspector_elem, {
     type = "line",
     style_mods = {
       top_margin = 4,
@@ -150,39 +153,49 @@ local function update_inspector(player)
     then
       -- only create an editor if the field is used by any selected node
       -- and only create an editor for auto_center if any selected node is a root node
-      create_inspector_field_editor(player, field)
+      create_inspector_field_editor(window_state, field)
     end
   end
 end
 
 ---@param player PlayerData
-local function create_inspector(player)
-  local inspector_window_elem, inspector_inner = gui.create_elem(player.player.gui.screen, {
-    type = "frame",
-    direction = "horizontal",
-    caption = "Inspector",
-    children = {
-      {
-        type = "frame",
-        direction = "vertical",
-        name = "inspector",
-        style = "inside_shallow_frame",
-        style_mods = {
-          horizontally_stretchable = true,
-          vertically_stretchable = true,
-          padding = 4,
-        },
-      },
-    },
-  })
-  ---@cast inspector_inner -?
+local function update_inspectors(player)
+  for _, window_state in pairs(player.windows["inspector"]) do
+    update_inspector(window_state)
+  end
+end
 
-  player.inspector_window_elem = inspector_window_elem
-  player.inspector_elem = inspector_inner.inspector
+window_manager.register_window{
+  window_type = "inspector",
+  title = "Inspector",
+  initial_size = {width = 300, height = 500},
+  minimal_size = {width = 100, height = 100},
+
+  ---@param window_state WindowState
+  on_create = function(window_state)
+    local _, inspector_inner = gui.create_elem(window_state.frame_elem, {
+      type = "frame",
+      direction = "vertical",
+      name = "inspector",
+      style = "inside_shallow_frame",
+      style_mods = {
+        horizontally_stretchable = true,
+        vertically_stretchable = true,
+        padding = 4,
+      },
+    })
+    ---@cast inspector_inner -?
+    window_state.inspector_elem = inspector_inner.inspector
+  end
+}
+
+---@param player PlayerData
+local function create_inspector(player)
+  window_manager.create_window(player, "inspector")
 end
 
 ---@class __gui-editor__.inspector
 return {
-  update_inspector = update_inspector,
+  update_inspectors = update_inspectors,
   create_inspector = create_inspector,
 }

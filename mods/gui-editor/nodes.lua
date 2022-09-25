@@ -160,7 +160,7 @@ local function finish_changing_selection(player)
       error("Invalid selection: When there are selected nodes there must be at least one cursor node.")
     end
     hierarchy.update_hierarchies(player)
-    inspector.update_inspector(player)
+    inspector.update_inspectors(player)
     player.dirty_selection = false
   end
 end

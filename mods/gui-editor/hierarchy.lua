@@ -130,7 +130,7 @@ local on_hierarchy_row_click = gui.register_handler("on_hierarchy_row_click", fu
       -- TODO: only update if it is dirty
       update_hierarchies(player)
       -- TODO: only update inspector if the "is_root" state changed of any node.
-      inspector.update_inspector(player)
+      inspector.update_inspectors(player)
     end
   end
 end)

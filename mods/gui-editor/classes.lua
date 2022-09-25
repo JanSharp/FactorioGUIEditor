@@ -12,8 +12,6 @@ global = {}
 ---@field windows table<string, WindowState[]>
 ---@field windows_by_id table<integer, WindowState>
 ---@field next_window_id integer
----@field inspector_window_elem LuaGuiElement
----@field inspector_elem LuaGuiElement
 ---@field active_editors table<string, table<string, EditorState>> window_name => (editor) name => editor_state
 -- ---@field inspector_editors table<string, EditorData>
 ---@field main_node MainNode
@@ -67,6 +65,7 @@ global = {}
 ---@field size Size
 ---
 ---@field hierarchy_elem LuaGuiElement @ for hierarchy windows
+---@field inspector_elem LuaGuiElement @ for inspector windows
 
 ---100% static
 ---@class Editor
