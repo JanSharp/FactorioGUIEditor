@@ -26,6 +26,8 @@ end
 
 ---@param window_state WindowState
 local function position_invisible_frames(window_state)
+  if not window_state.resizing then return end
+
   local location = window_state.location
   local size = window_state.size
 
@@ -383,9 +385,9 @@ end
 local function set_resizing(window_state, resizing)
   if window_state.resizing == resizing then return end
   window_state.resizing = resizing
-  window_state.toggle_resize_button.style = resizing
+  window_state.resize_button.style = resizing
     and "gui_editor_selected_frame_action_button" or "frame_action_button"
-  window_state.toggle_resize_button.sprite = resizing
+  window_state.resize_button.sprite = resizing
     and "gui-editor-resize-black" or "gui-editor-resize-white"
   window_state.draggable_space.style = resizing
     and "draggable_space_header" or "empty_widget"
@@ -419,12 +421,28 @@ local function set_resizing(window_state, resizing)
   end
 end
 
-local on_resize_toggle_click = gui.register_handler(
-  "on_resize_toggle_click",
+local on_resize_button_click = gui.register_handler(
+  "on_resize_button_click",
   ---@param event EventData.on_gui_click
   function(player, tags, event)
+    if event.shift or event.alt then return end
     local window_state = player.windows_by_id[tags.window_id]
-    set_resizing(window_state, not window_state.resizing)
+    if event.button == defines.mouse_button_type.left then
+      if event.control then return end
+      set_resizing(window_state, not window_state.resizing)
+    elseif event.button == defines.mouse_button_type.right then
+      if event.control then
+        window_state.location.x = 0
+        window_state.size.width = window_state.player.resolution.width
+        position_invisible_frames(window_state)
+        apply_location_and_size_changes(window_state)
+      else
+        window_state.location.y = 0
+        window_state.size.height = window_state.player.resolution.height
+        position_invisible_frames(window_state)
+        apply_location_and_size_changes(window_state)
+      end
+    end
   end
 )
 
@@ -434,9 +452,7 @@ local on_main_frame_location_changed = gui.register_handler(
   function(player, tags, event)
     local window_state = player.windows_by_id[tags.window_id]
     window_state.location = window_state.frame_elem.location
-    if window_state.resizing then
-      position_invisible_frames(window_state)
-    end
+    position_invisible_frames(window_state)
   end
 )
 
@@ -480,13 +496,13 @@ local function create_window(player, window_type)
           {
             type = "sprite-button",
             style = "frame_action_button",
-            name = "toggle_resize_button",
+            name = "resize_button",
             tooltip = "Resize/Move",
             sprite = "gui-editor-resize-white",
             hovered_sprite = "gui-editor-resize-black",
             clicked_sprite = "gui-editor-resize-black",
             tags = {window_id = window_id},
-            events = {[defines.events.on_gui_click] = on_resize_toggle_click},
+            events = {[defines.events.on_gui_click] = on_resize_button_click},
           },
           {
             type = "sprite-button",
@@ -510,7 +526,7 @@ local function create_window(player, window_type)
     frame_elem = frame,
     header_elem = inner.header_flow,
     draggable_space = inner.draggable_space,
-    toggle_resize_button = inner.toggle_resize_button,
+    resize_button = inner.resize_button,
     resizing = false,
     location = {x = 0, y = 0},
     size = {
