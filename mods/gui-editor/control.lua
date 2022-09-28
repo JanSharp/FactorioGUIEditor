@@ -64,7 +64,7 @@ script.on_event(defines.events.on_player_created, function(event)
   gvs.show_shortcut_bar = false
 
   local background_rendering = rendering.draw_rectangle{
-    color = {0, 0, 0},
+    color = {29, 29, 29},
     draw_on_ground = true,
     players = {player},
     surface = player.surface,
