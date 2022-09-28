@@ -219,6 +219,26 @@ local function set_size_from_location(window_state, location, direction)
 end
 
 ---@param window_state WindowState
+---@param x integer @ to match the behavior for resizing,
+---this location is at the opposite side of the anchor
+---@param anchor WindowAnchor
+local function set_location_x_from_location(window_state, x, anchor)
+  local current_x = get_anchor_x(window_state, opposite_anchors[anchor])
+  local diff = x - current_x
+  window_state.location.x = window_state.location.x + diff
+end
+
+---@param window_state WindowState
+---@param y integer @ to match the behavior for resizing,
+---this location is at the opposite side of the anchor
+---@param anchor WindowAnchor
+local function set_location_y_from_location(window_state, y, anchor)
+  local current_y = get_anchor_y(window_state, opposite_anchors[anchor])
+  local diff = y - current_y
+  window_state.location.y = window_state.location.y + diff
+end
+
+---@param window_state WindowState
 ---@param other WindowState
 local function overlapping_horizontally(window_state, other)
   return not (
@@ -237,31 +257,48 @@ local function overlapping_vertically(window_state, other)
 end
 
 ---@param window_state WindowState
----@param direction WindowDirection
-local function snap_resize(window_state, direction)
-  local anchor = anchors_for_direction[direction]
-
-  local function snap_axis(get_anchor_xy, overlapping, set_from_location)
-    local this_anchor_xy = get_anchor_xy(window_state, opposite_anchors[anchor])
-    for _, other in pairs(window_state.player.windows_by_id) do
-      if overlapping(window_state, other) then
-        local other_xy = get_anchor_xy(other, anchor)
-        if other_xy == this_anchor_xy then
-          break
-        end
-        if math.abs(other_xy - this_anchor_xy) <= 8 then
-          set_from_location(window_state, other_xy, anchor)
-          break
-        end
+---@param get_anchor_xy function @ `get_anchor_x` or `get_anchor_y`
+---@param overlapping function @ `overlapping_horizontally` or `overlapping_vertically`
+---@param anchor WindowAnchor
+---@param snap_to_location fun(window_state: WindowState, location_xy: integer, anchor: WindowAnchor) @
+---actual snap action. the anchor arg will be the same value as the anchor passed to this function
+---@return boolean snapped @ returns true if it did snap or was already snapped
+local function snap_axis(window_state, get_anchor_xy, overlapping, anchor, snap_to_location)
+  local this_anchor_xy = get_anchor_xy(window_state, opposite_anchors[anchor])
+  for _, other in pairs(window_state.player.windows_by_id) do
+    if overlapping(window_state, other) then
+      local other_xy = get_anchor_xy(other, anchor)
+      if other_xy == this_anchor_xy then
+        return true
+      end
+      if math.abs(other_xy - this_anchor_xy) <= 8 then
+        snap_to_location(window_state, other_xy, anchor)
+        return true
       end
     end
   end
+  return false
+end
 
+---@param window_state WindowState
+local function snap_movement(window_state)
+  if not snap_axis(window_state, get_anchor_x, overlapping_vertically, anchors.top_left, set_location_x_from_location) then
+    snap_axis(window_state, get_anchor_x, overlapping_vertically, anchors.top_right, set_location_x_from_location)
+  end
+  if not snap_axis(window_state, get_anchor_y, overlapping_horizontally, anchors.top_left, set_location_y_from_location) then
+    snap_axis(window_state, get_anchor_y, overlapping_horizontally, anchors.bottom_left, set_location_y_from_location)
+  end
+end
+
+---@param window_state WindowState
+---@param direction WindowDirection
+local function snap_resize(window_state, direction)
+  local anchor = anchors_for_direction[direction]
   if bit32.band(direction, directions.left + directions.right) ~= 0 then
-    snap_axis(get_anchor_x, overlapping_vertically, set_width_from_location)
+    snap_axis(window_state, get_anchor_x, overlapping_vertically, anchor, set_width_from_location)
   end
   if bit32.band(direction, directions.top + directions.bottom) ~= 0 then
-    snap_axis(get_anchor_y, overlapping_horizontally, set_height_from_location)
+    snap_axis(window_state, get_anchor_y, overlapping_horizontally, anchor, set_height_from_location)
   end
 end
 
@@ -283,6 +320,7 @@ local on_resize_frame_location_changed = gui.register_handler(
         x = elem_location.x - 10,
         y = elem_location.y - 10,
       }
+      snap_movement(window_state)
     else
       elem_location.x = elem_location.x + 10
       elem_location.y = elem_location.y + 10
