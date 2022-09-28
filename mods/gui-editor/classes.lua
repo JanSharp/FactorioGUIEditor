@@ -12,6 +12,7 @@ global = {}
 ---@field windows table<string, WindowState[]>
 ---@field windows_by_id table<integer, WindowState>
 ---@field next_window_id integer
+---@field resolution DisplayResolution
 ---@field active_editors table<string, table<string, EditorState>> window_name => (editor) name => editor_state
 -- ---@field inspector_editors table<string, EditorData>
 ---@field main_node MainNode
@@ -50,7 +51,7 @@ global = {}
 ---@field header_elem LuaGuiElement
 ---@field draggable_space LuaGuiElement
 ---@field toggle_resize_button LuaGuiElement
----resize frames
+---resize/movement frames
 ---@field movement_frame LuaGuiElement
 ---@field left_resize_frame LuaGuiElement
 ---@field right_resize_frame LuaGuiElement
@@ -62,7 +63,9 @@ global = {}
 ---@field bottom_right_resize_frame LuaGuiElement
 ---end of resize frames
 ---@field resizing boolean
+---@field location GuiLocation
 ---@field size Size
+---@field is_window_edge boolean? @ dummy windows for snapping to edges, only have location and size
 ---
 ---@field hierarchy_elem LuaGuiElement @ for hierarchy windows
 ---@field inspector_elem LuaGuiElement @ for inspector windows

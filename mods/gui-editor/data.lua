@@ -92,7 +92,48 @@ styles.gui_editor_invisible_frame = {
   graphical_set = {},
 }
 
+styles.gui_editor_selected_frame_action_button = {
+  type = "button_style",
+  parent = "frame_action_button",
+  default_font_color = _ENV.button_hovered_font_color,
+  default_graphical_set = {
+    base = { position = { 225, 17 }, corner_size = 8 },
+    shadow = { position = { 440, 24 }, corner_size = 8, draw_type = "outer" },
+  },
+  hovered_font_color = _ENV.button_hovered_font_color,
+  hovered_graphical_set = {
+    base = { position = { 369, 17 }, corner_size = 8 },
+    shadow = { position = { 440, 24 }, corner_size = 8, draw_type = "outer" },
+  },
+  clicked_font_color = _ENV.button_hovered_font_color,
+  clicked_graphical_set = {
+    base = { position = { 352, 17 }, corner_size = 8 },
+    shadow = { position = { 440, 24 }, corner_size = 8, draw_type = "outer" },
+  },
+}
+
+-- to make the arrow tooltips for invisible resize frames look better
+styles.tooltip_label.minimal_width = 0
+
 data:extend{
+  {
+    type = "sprite",
+    name = "gui-editor-resize-white",
+    filename = "__gui-editor__/graphics/icons/resize-white.png",
+    width = 32,
+    height = 32,
+    flags = {"gui-icon"},
+    scale = 0.5,
+  },
+  {
+    type = "sprite",
+    name = "gui-editor-resize-black",
+    filename = "__gui-editor__/graphics/icons/resize-black.png",
+    width = 32,
+    height = 32,
+    flags = {"gui-icon"},
+    scale = 0.5,
+  },
   {
     type = "font",
     name = "default-mono",
