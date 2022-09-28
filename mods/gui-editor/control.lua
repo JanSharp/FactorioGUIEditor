@@ -47,6 +47,10 @@ script.on_event(defines.events.on_player_display_resolution_changed, function(ev
   window_manager.on_player_display_resolution_changed(event)
 end)
 
+script.on_event(defines.events.on_player_display_scale_changed, function(event)
+  window_manager.on_player_display_scale_changed(event)
+end)
+
 script.on_event(defines.events.on_player_created, function(event)
   local player = game.get_player(event.player_index)
   ---@cast player -?

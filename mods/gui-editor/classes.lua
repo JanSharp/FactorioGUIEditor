@@ -13,6 +13,7 @@ global = {}
 ---@field windows_by_id table<integer, WindowState>
 ---@field next_window_id integer
 ---@field resolution DisplayResolution
+---@field display_scale number
 ---@field active_editors table<string, table<string, EditorState>> window_name => (editor) name => editor_state
 -- ---@field inspector_editors table<string, EditorData>
 ---@field main_node MainNode

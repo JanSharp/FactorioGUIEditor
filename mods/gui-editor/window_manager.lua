@@ -30,56 +30,58 @@ local function position_invisible_frames(window_state)
 
   local location = window_state.location
   local size = window_state.size
+  local scale = window_state.player.display_scale
+  local offset = 10 * scale
 
   window_state.movement_frame.location = {
-    x = location.x + 10,
-    y = location.y + 10,
+    x = location.x + offset,
+    y = location.y + offset,
   }
   window_state.movement_frame.style.size = {
-    size.width - 20 - (24 + 4) * 2,
+    size.width / scale - 20 - (24 + 4) * 2,
     28,
   }
 
   window_state.top_left_resize_frame.location = {
-    x = location.x - 10,
-    y = location.y - 10,
+    x = location.x - offset,
+    y = location.y - offset,
   }
   window_state.top_right_resize_frame.location = {
-    x = location.x + size.width - 10,
-    y = location.y - 10,
+    x = location.x + size.width - offset,
+    y = location.y - offset,
   }
   window_state.bottom_left_resize_frame.location = {
-    x = location.x - 10,
-    y = location.y + size.height - 10,
+    x = location.x - offset,
+    y = location.y + size.height - offset,
   }
   window_state.bottom_right_resize_frame.location = {
-    x = location.x + size.width - 10,
-    y = location.y + size.height - 10,
+    x = location.x + size.width - offset,
+    y = location.y + size.height - offset,
   }
 
   window_state.top_resize_frame.location = {
-    x = location.x + 10,
-    y = location.y - 10,
+    x = location.x + offset,
+    y = location.y - offset,
   }
-  window_state.top_resize_frame.style.width = size.width - 20
+  window_state.top_resize_frame.style.width = size.width / scale - 20
 
   window_state.left_resize_frame.location = {
-    x = location.x - 10,
-    y = location.y + 10,
+    x = location.x - offset,
+    y = location.y + offset,
   }
-  window_state.left_resize_frame.style.height = size.height - 20
+  window_state.left_resize_frame.style.height = size.height / scale - 20
 
   window_state.bottom_resize_frame.location = {
-    x = location.x + 10,
-    y = location.y + size.height - 10,
+    x = location.x + offset,
+    y = location.y + size.height - offset,
   }
-  window_state.bottom_resize_frame.style.width = size.width - 20
+  window_state.bottom_resize_frame.style.width = size.width / scale - 20
 
   window_state.right_resize_frame.location = {
-    x = location.x + size.width - 10,
-    y = location.y + 10,
+    x = location.x + size.width - offset,
+    y = location.y + offset,
   }
-  window_state.right_resize_frame.style.height = size.height - 20
+  window_state.right_resize_frame.style.height = size.height / scale - 20
 end
 
 ---@enum WindowDirection
@@ -169,7 +171,9 @@ end
 ---@param anchor WindowAnchor
 local function set_width(window_state, width, anchor)
   local window = windows[window_state.window_type]
-  width = math.max(width, window.minimal_size.width)
+  local scale = window_state.player.display_scale
+  -- math.ceil because width should always be an integer
+  width = math.max(width, math.ceil(window.minimal_size.width * scale))
   if bit32.band(anchor, directions.right) ~= 0 then
     window_state.location.x = get_anchor_x(window_state, anchor) - width
   end
@@ -181,7 +185,9 @@ end
 ---@param anchor WindowAnchor
 local function set_height(window_state, height, anchor)
   local window = windows[window_state.window_type]
-  height = math.max(height, window.minimal_size.height)
+  local scale = window_state.player.display_scale
+  -- math.ceil because height should always be an integer
+  height = math.max(height, math.ceil(window.minimal_size.height * scale))
   if bit32.band(anchor, directions.bottom) ~= 0 then
     window_state.location.y = get_anchor_y(window_state, anchor) - height
   end
@@ -307,7 +313,10 @@ end
 ---@param window_state WindowState
 local function apply_location_and_size_changes(window_state)
   window_state.frame_elem.location = window_state.location
-  window_state.frame_elem.style.size = window_state.size
+  local scale = window_state.player.display_scale
+  local style = window_state.frame_elem.style
+  style.width = window_state.size.width / scale
+  style.height = window_state.size.height / scale
 end
 
 local on_resize_frame_location_changed = gui.register_handler(
@@ -316,16 +325,18 @@ local on_resize_frame_location_changed = gui.register_handler(
   function(player, tags, event)
     local window_state = player.windows_by_id[tags.window_id]
     local elem_location = event.element.location ---@cast elem_location -nil
+    -- + 0.5 and then a floor to make it round instead of truncating
+    local offset = math.floor(10 * player.display_scale + 0.5)
 
     if tags.movement then
       window_state.location = {
-        x = elem_location.x - 10,
-        y = elem_location.y - 10,
+        x = elem_location.x - offset,
+        y = elem_location.y - offset,
       }
       snap_movement(window_state)
     else
-      elem_location.x = elem_location.x + 10
-      elem_location.y = elem_location.y + 10
+      elem_location.x = elem_location.x + offset
+      elem_location.y = elem_location.y + offset
       set_size_from_location(window_state, elem_location, tags.direction)
       snap_resize(window_state, tags.direction)
     end
@@ -450,9 +461,9 @@ local on_main_frame_location_changed = gui.register_handler(
   "on_main_frame_location_changed",
   ---@param event EventData.on_gui_location_changed
   function(player, tags, event)
-    local window_state = player.windows_by_id[tags.window_id]
-    window_state.location = window_state.frame_elem.location
-    position_invisible_frames(window_state)
+    -- local window_state = player.windows_by_id[tags.window_id]
+    -- window_state.location = window_state.frame_elem.location
+    -- position_invisible_frames(window_state)
   end
 )
 
@@ -545,13 +556,13 @@ local function create_window(player, window_type)
   return window_state
 end
 
----@param event EventData.on_player_display_resolution_changed
-local function on_player_display_resolution_changed(event)
-  local player = util.get_player(event)
-  if not player then return end
-
+---@param player PlayerData
+---@param scale_changed boolean
+local function on_resolution_changed(player, scale_changed)
   local resolution = player.player.display_resolution
+  local display_scale = player.player.display_scale
   player.resolution = resolution
+  player.display_scale = display_scale
 
   -- left
   player.windows_by_id[1].size.height = resolution.height
@@ -566,45 +577,54 @@ local function on_player_display_resolution_changed(event)
 
   -- stop all resizing because window scaling when changing resolution will be handled differently
   for _, window_state in pairs(player.windows_by_id) do
+    if scale_changed and not window_state.is_window_edge then
+      -- changing the scale affects the minimal_size, so we reapply width and height
+      set_width(window_state, window_state.size.width, anchors.top_left)
+      set_height(window_state, window_state.size.height, anchors.top_left)
+      -- and applying size to the gui element depends scale regardless of size having changed
+      apply_location_and_size_changes(window_state)
+    end
     if window_state.resizing then
       set_resizing(window_state, false)
     end
   end
 end
 
+---@param event EventData.on_player_display_resolution_changed
+local function on_player_display_resolution_changed(event)
+  local player = util.get_player(event)
+  if not player then return end
+  on_resolution_changed(player, false)
+end
+
+---@param event EventData.on_player_display_scale_changed
+local function on_player_display_scale_changed(event)
+  local player = util.get_player(event)
+  if not player then return end
+  on_resolution_changed(player, true)
+end
+
 ---@param player PlayerData
 local function init_player(player)
-  local resolution = player.player.display_resolution
-
-  player.resolution = resolution
   player.windows = {}
+  ---@param window_id integer
+  local function make_dummy_window(window_id)
+    return {
+      window_id = window_id,
+      location = {x = 0, y = 0},
+      size = {width = 0, height = 0},
+      is_window_edge = true,
+    }
+  end
   player.windows_by_id = {
-    { -- left
-      window_id = 1,
-      location = {x = 0, y = 0},
-      size = {width = 0, height = resolution.height},
-      is_window_edge = true,
-    },
-    { -- right
-      window_id = 2,
-      location = {x = resolution.width, y = 0},
-      size = {width = 0, height = resolution.height},
-      is_window_edge = true,
-    },
-    { -- top
-      window_id = 3,
-      location = {x = 0, y = 0},
-      size = {width = resolution.width, height = 0},
-      is_window_edge = true,
-    },
-    { -- bottom
-      window_id = 4,
-      location = {x = 0, y = resolution.height},
-      size = {width = resolution.width, height = 0},
-      is_window_edge = true,
-    },
+    make_dummy_window(1), -- left
+    make_dummy_window(2), -- right
+    make_dummy_window(3), -- top
+    make_dummy_window(4), -- bottom
   }
   player.next_window_id = 5
+
+  on_resolution_changed(player, false)
 end
 
 return {
@@ -612,5 +632,6 @@ return {
   get_windows = get_windows,
   create_window = create_window,
   on_player_display_resolution_changed = on_player_display_resolution_changed,
+  on_player_display_scale_changed = on_player_display_scale_changed,
   init_player = init_player,
 }
