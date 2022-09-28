@@ -576,6 +576,7 @@ end
 local function init_player(player)
   local resolution = player.player.display_resolution
 
+  player.resolution = resolution
   player.windows = {}
   player.windows_by_id = {
     { -- left
