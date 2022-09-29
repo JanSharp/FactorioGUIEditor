@@ -1,6 +1,7 @@
 
 local gui = require("__gui-editor__.gui")
 local util = require("__gui-editor__.util")
+local ll = require("__gui-editor__.linked_list")
 
 ---@type table<string, Window>
 local windows = {}
@@ -394,6 +395,14 @@ end
 
 ---@param window_state WindowState
 local function bring_to_front(window_state)
+  local window_list = window_state.player.window_list
+  if window_list.first ~= window_state then
+    window_list.first.title_label.style.font_color = {0.6, 0.6, 0.6}
+  end
+  ll.remove(window_list, window_state)
+  ll.prepend(window_list, window_state)
+  -- NOTE: hardcoded heading_font_color, because setting to nil appears to simply get ignored
+  window_state.title_label.style.font_color = {255, 230, 192}
   window_state.frame_elem.bring_to_front()
   if window_state.resizing then
     window_state.movement_frame.bring_to_front()
@@ -580,6 +589,7 @@ local function create_window(player, window_type)
         children = {
           {
             type = "label",
+            name = "title_label",
             style = "frame_title",
             caption = window.title,
           },
@@ -625,6 +635,7 @@ local function create_window(player, window_type)
     id = window_id,
     frame_elem = frame,
     header_elem = inner.header_flow,
+    title_label = inner.title_label,
     draggable_space = inner.draggable_space,
     resize_button = inner.resize_button,
     resizing = false,
@@ -639,6 +650,9 @@ local function create_window(player, window_type)
 
   local window_states = get_windows(player, window_type)
   window_states[#window_states+1] = window_state
+
+  ll.append(player.window_list, window_state)
+  bring_to_front(window_state)
 
   window.on_create(window_state)
 
@@ -718,7 +732,6 @@ end
 
 ---@param player PlayerData
 local function init_player(player)
-  player.windows_by_type = {}
   ---@param window_id integer
   local function make_dummy_window(window_id)
     return {
@@ -728,6 +741,8 @@ local function init_player(player)
       is_window_edge = true,
     }
   end
+  player.window_list = ll.new_list(false)
+  player.windows_by_type = {}
   player.windows_by_id = {
     make_dummy_window(1), -- left
     make_dummy_window(2), -- right

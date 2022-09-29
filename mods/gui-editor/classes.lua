@@ -9,6 +9,7 @@ global = {}
 ---@class PlayerData
 ---@field player LuaPlayer
 ---@field background_rendering uint64
+---@field window_list WindowStateList @ windows in order by "in front"/"in back"
 ---@field windows_by_type table<string, WindowState[]>
 ---@field windows_by_id table<integer, WindowState>
 ---@field next_window_id integer
@@ -49,6 +50,7 @@ global = {}
 ---@field window_type string
 ---@field id integer
 ---@field frame_elem LuaGuiElement
+---@field title_label LuaGuiElement
 ---@field header_elem LuaGuiElement
 ---@field draggable_space LuaGuiElement
 ---@field resize_button LuaGuiElement
@@ -70,6 +72,13 @@ global = {}
 ---
 ---@field hierarchy_elem LuaGuiElement @ for hierarchy windows
 ---@field inspector_elem LuaGuiElement @ for inspector windows
+---
+---@field prev WindowState? @ in front of this window
+---@field next WindowState? @ behind this window
+
+---@class WindowStateList
+---@field first WindowState? @ front
+---@field last WindowState? @ back
 
 ---100% static
 ---@class Editor
