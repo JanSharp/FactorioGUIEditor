@@ -265,36 +265,102 @@ local function overlapping_vertically(window_state, other)
 end
 
 ---@param window_state WindowState
----@param get_anchor_xy function @ `get_anchor_x` or `get_anchor_y`
----@param overlapping function @ `overlapping_horizontally` or `overlapping_vertically`
+---@param get_anchor_xy function @ `get_anchor_x` or `get_anchor_y`. The axis to snap
+---@param get_anchor_yx function @ `get_anchor_y` or `get_anchor_x`. The other axis
+---@param overlapping function @ `overlapping_vertically` or `overlapping_horizontally`
 ---@param anchor WindowAnchor
----@param snap_to_location fun(window_state: WindowState, location_xy: integer, anchor: WindowAnchor) @
----actual snap action. the anchor arg will be the same value as the anchor passed to this function
+---@param snap_to_location fun(window_state: WindowState, xy: integer, anchor: WindowAnchor) @
+---actual snap action. the anchor arg will be the same value as the anchor passed to this function.
+---The xy value will be on the opposite side of the anchor
 ---@return boolean snapped @ returns true if it did snap or was already snapped
-local function snap_axis(window_state, get_anchor_xy, overlapping, anchor, snap_to_location)
-  local this_anchor_xy = get_anchor_xy(window_state, opposite_anchors[anchor])
+local function snap_axis_internal(
+  window_state,
+  get_anchor_xy,
+  get_anchor_yx,
+  overlapping,
+  anchor,
+  snap_to_location
+)
+  local opposite_anchor = opposite_anchors[anchor]
+  -- main axis
+  local this_anchor_xy = get_anchor_xy(window_state, opposite_anchor)
+  -- other axis
+  local side_one_yx = get_anchor_yx(window_state, anchor)
+  local side_two_yx = get_anchor_yx(window_state, opposite_anchor)
+  ---@param other_xy integer @ main axis of the other window
+  local function try_snap_to(other_xy)
+    if other_xy == this_anchor_xy then -- if it's touching, it's snapped already
+      return true
+    end
+    if math.abs(other_xy - this_anchor_xy) <= 8 then -- not touching, but close. Snap to it
+      snap_to_location(window_state, other_xy, anchor)
+      return true
+    end
+  end
   for _, other in pairs(window_state.player.windows_by_id) do
     if overlapping(window_state, other) then
-      local other_xy = get_anchor_xy(other, anchor)
-      if other_xy == this_anchor_xy then
-        return true
-      end
-      if math.abs(other_xy - this_anchor_xy) <= 8 then
-        snap_to_location(window_state, other_xy, anchor)
-        return true
-      end
+      -- check if the other window's edge is touching - or close to - this window's opposite edge
+      if try_snap_to(get_anchor_xy(other, anchor)) then return true end
+    -- check if the other axis's edges are touching
+    elseif side_one_yx == get_anchor_yx(other, opposite_anchor)
+      or side_two_yx == get_anchor_yx(other, anchor)
+    then
+      -- perform the same snapping logic as before, but this time with the same window side
+      if try_snap_to(get_anchor_xy(other, opposite_anchor)) then return true end
     end
   end
   return false
 end
 
 ---@param window_state WindowState
+---@param anchor WindowAnchor
+---@param snap_to_location fun(window_state: WindowState, x: integer, anchor: WindowAnchor) @
+---actual snap action. the anchor arg will be the same value as the anchor passed to this function.
+---The x value will be on the opposite side of the anchor
+---@return boolean snapped @ returns true if it did snap or was already snapped
+local function snap_horizontally(window_state, anchor, snap_to_location)
+  return snap_axis_internal(
+    window_state,
+    get_anchor_x,
+    get_anchor_y,
+    overlapping_vertically,
+    anchor,
+    snap_to_location
+  )
+end
+
+---@param window_state WindowState
+---@param anchor WindowAnchor
+---@param snap_to_location fun(window_state: WindowState, y: integer, anchor: WindowAnchor) @
+---actual snap action. the anchor arg will be the same value as the anchor passed to this function.
+---The y value will be on the opposite side of the anchor
+---@return boolean snapped @ returns true if it did snap or was already snapped
+local function snap_vertically(window_state, anchor, snap_to_location)
+  return snap_axis_internal(
+    window_state,
+    get_anchor_y,
+    get_anchor_x,
+    overlapping_horizontally,
+    anchor,
+    snap_to_location
+  )
+end
+
+---@param window_state WindowState
 local function snap_movement(window_state)
-  if not snap_axis(window_state, get_anchor_x, overlapping_vertically, anchors.top_left, set_location_x_from_location) then
-    snap_axis(window_state, get_anchor_x, overlapping_vertically, anchors.top_right, set_location_x_from_location)
+  local function snap_x()
+    return snap_horizontally(window_state, anchors.top_left, set_location_x_from_location)
+      or snap_horizontally(window_state, anchors.top_right, set_location_x_from_location)
   end
-  if not snap_axis(window_state, get_anchor_y, overlapping_horizontally, anchors.top_left, set_location_y_from_location) then
-    snap_axis(window_state, get_anchor_y, overlapping_horizontally, anchors.bottom_left, set_location_y_from_location)
+  local snapped_x = snap_x()
+  if (snap_vertically(window_state, anchors.top_left, set_location_y_from_location)
+      or snap_vertically(window_state, anchors.bottom_left, set_location_y_from_location)
+    )
+    and not snapped_x
+  then
+    -- if y snapped, snap x again as long as x didn't already snap
+    -- because vertically touching windows can snap horizontal edges to align with each other
+    snap_x()
   end
 end
 
@@ -302,11 +368,18 @@ end
 ---@param direction WindowDirection
 local function snap_resize(window_state, direction)
   local anchor = anchors_for_direction[direction]
-  if bit32.band(direction, directions.left + directions.right) ~= 0 then
-    snap_axis(window_state, get_anchor_x, overlapping_vertically, anchor, set_width_from_location)
+  local function snap_x()
+    return bit32.band(direction, directions.left + directions.right) ~= 0
+      and snap_horizontally(window_state, anchor, set_width_from_location)
   end
-  if bit32.band(direction, directions.top + directions.bottom) ~= 0 then
-    snap_axis(window_state, get_anchor_y, overlapping_horizontally, anchor, set_height_from_location)
+  local snapped_x = snap_x()
+  if bit32.band(direction, directions.top + directions.bottom) ~= 0
+    and snap_vertically(window_state, anchor, set_height_from_location)
+    and not snapped_x
+  then
+    -- if y snapped, snap x again as long as x didn't already snap
+    -- because vertically touching windows can snap horizontal edges to align with each other
+    snap_x()
   end
 end
 
