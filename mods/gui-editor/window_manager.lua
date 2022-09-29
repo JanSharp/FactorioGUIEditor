@@ -392,6 +392,22 @@ local function apply_location_and_size_changes(window_state)
   style.height = window_state.size.height / scale
 end
 
+---@param window_state WindowState
+local function bring_to_front(window_state)
+  window_state.frame_elem.bring_to_front()
+  if window_state.resizing then
+    window_state.movement_frame.bring_to_front()
+    window_state.left_resize_frame.bring_to_front()
+    window_state.right_resize_frame.bring_to_front()
+    window_state.top_resize_frame.bring_to_front()
+    window_state.bottom_resize_frame.bring_to_front()
+    window_state.top_left_resize_frame.bring_to_front()
+    window_state.top_right_resize_frame.bring_to_front()
+    window_state.bottom_left_resize_frame.bring_to_front()
+    window_state.bottom_right_resize_frame.bring_to_front()
+  end
+end
+
 local on_resize_frame_location_changed = gui.register_handler(
   "on_resize_frame_location_changed",
   ---@param event EventData.on_gui_location_changed
@@ -629,6 +645,29 @@ local function create_window(player, window_type)
   return window_state
 end
 
+---@param event EventData.on_gui_click
+local function on_gui_click(event)
+  -- this finds the frame that is inside gui.screen and gets the window_state
+  -- using the window_id in the tags of the found frame.
+  -- Since both the main frame of windows and all invisible frames have said window_id
+  -- this ends up handling all of them. No matter which element is clicked, the window
+  -- will be moved to the front and and all invisible frames stay on top
+  local player = util.get_player(event)
+  if not player then return end
+  local root = player.player.gui.screen
+  local main_frame = event.element
+  local parent = main_frame.parent
+  ---@cast parent -nil
+  while parent ~= root do
+    main_frame = parent
+    parent = parent.parent
+  end
+  local tags = gui.try_get_tags(main_frame)
+  if not tags or not tags.window_id then return end
+  local window_state = player.windows_by_id[tags.window_id]
+  bring_to_front(window_state)
+end
+
 ---@param player PlayerData
 ---@param scale_changed boolean
 local function on_resolution_changed(player, scale_changed)
@@ -703,7 +742,9 @@ end
 return {
   register_window = register_window,
   get_windows = get_windows,
+  bring_to_front = bring_to_front,
   create_window = create_window,
+  on_gui_click = on_gui_click,
   on_player_display_resolution_changed = on_player_display_resolution_changed,
   on_player_display_scale_changed = on_player_display_scale_changed,
   init_player = init_player,

@@ -138,4 +138,9 @@ end)
 
 script.on_event(defines.events.on_tick, restart_manager.on_tick)
 
-gui.handle_all_gui_events()
+gui.register_for_all_gui_events()
+
+script.on_event(defines.events.on_gui_click, function(event)
+  window_manager.on_gui_click(event)
+  gui.handle_gui_event(event)
+end)

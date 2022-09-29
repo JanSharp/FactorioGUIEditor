@@ -23,31 +23,42 @@ local function register_handler(name, handler)
   return handler
 end
 
----@param gui_event_define defines.events @ any gui event
-local function handle_gui_event(gui_event_define)
-  ---@param event EventData.on_gui_click @ any gui event
-  script.on_event(gui_event_define, function(event)
-    if not event.element then return end
-    local tags = event.element.tags
-    if not tags or not tags.__gui_editor then return end
-    local tag_data = tags.__gui_editor
-    local handler_names = tag_data.handlers and tag_data.handlers[event_id_to_name[event.name]]
-    if not handler_names then return end
-    local player = util.get_player(event)
-    if not player then return end
-    for handler_name in pairs(handler_names) do
-      local handler = handlers_by_name[handler_name]
-      if handler then
-        handler(player, tag_data, event)
-      end
-    end
-  end)
+---@param element LuaGuiElement
+---@return any?
+local function try_get_tags(element)
+  local tags = element.tags
+  if not tags or not tags.__gui_editor then return end
+  local tag_data = tags.__gui_editor
+  return tag_data
 end
 
-local function handle_all_gui_events()
+---@param event EventData.on_gui_click @ any gui event
+local function handle_gui_event(event)
+  if not event.element then return end
+  local tags = event.element.tags
+  if not tags or not tags.__gui_editor then return end
+  local tag_data = tags.__gui_editor
+  local handler_names = tag_data.handlers and tag_data.handlers[event_id_to_name[event.name]]
+  if not handler_names then return end
+  local player = util.get_player(event)
+  if not player then return end
+  for handler_name in pairs(handler_names) do
+    local handler = handlers_by_name[handler_name]
+    if handler then
+      handler(player, tag_data, event)
+    end
+  end
+end
+
+---@param gui_event_define defines.events @ any gui event
+local function register_for_gui_event(gui_event_define)
+  script.on_event(gui_event_define, handle_gui_event)
+end
+
+local function register_for_all_gui_events()
   for name, id in pairs(defines.events) do
     if name:find("^on_gui") then
-      handle_gui_event(id)
+      register_for_gui_event(id)
     end
   end
 end
@@ -115,7 +126,9 @@ end
 ---@class __gui-editor__.gui
 return {
   register_handler = register_handler,
+  try_get_tags = try_get_tags,
   handle_gui_event = handle_gui_event,
-  handle_all_gui_events = handle_all_gui_events,
+  register_for_gui_event = register_for_gui_event,
+  register_for_all_gui_events = register_for_all_gui_events,
   create_elem = create_elem,
 }
