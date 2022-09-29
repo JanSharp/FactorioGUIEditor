@@ -564,16 +564,6 @@ local on_resize_button_click = gui.register_handler(
   end
 )
 
-local on_main_frame_location_changed = gui.register_handler(
-  "on_main_frame_location_changed",
-  ---@param event EventData.on_gui_location_changed
-  function(player, tags, event)
-    -- local window_state = player.windows_by_id[tags.window_id]
-    -- window_state.location = window_state.frame_elem.location
-    -- position_invisible_frames(window_state)
-  end
-)
-
 ---@param player PlayerData
 ---@param window_type string
 ---@param parent_window WindowState?
@@ -589,8 +579,16 @@ local function create_window(player, window_type, parent_window)
       width = window.initial_size.width,
       height = window.initial_size.height,
     },
+    -- needs the window_id for the generic "bring clicked window to the front" logic
     tags = {window_id = window_id},
-    events = {[defines.events.on_gui_location_changed] = on_main_frame_location_changed},
+    -- no event handler for on_location_changed because on location changed fires before
+    -- the resolution and scale changing events. The resolution shrinking ends up
+    -- moving the frames, which - if on location changed changed was registered - would
+    -- cause the windows to actually change their window_state.location, which then
+    -- causes the window scaling logic in on resolution changed, which in this case would
+    -- make the window smaller create a gap from the window to the screen edge.
+    -- As long as resolution and scale changing is the only way for the frame to move on its own,
+    -- not listening to the location changed event makes for a much smoother experience.
     children = {
       {
         type = "flow",
