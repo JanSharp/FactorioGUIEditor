@@ -401,6 +401,10 @@ local function bring_to_front(window_state)
   end
   ll.remove(window_list, window_state)
   ll.prepend(window_list, window_state)
+  if window_state.parent_window then
+    ll.remove(window_state.parent_window.child_windows, window_state)
+    ll.prepend(window_state.parent_window.child_windows, window_state)
+  end
   -- NOTE: hardcoded heading_font_color, because setting to nil appears to simply get ignored
   window_state.title_label.style.font_color = {255, 230, 192}
   window_state.frame_elem.bring_to_front()
@@ -414,6 +418,11 @@ local function bring_to_front(window_state)
     window_state.top_right_resize_frame.bring_to_front()
     window_state.bottom_left_resize_frame.bring_to_front()
     window_state.bottom_right_resize_frame.bring_to_front()
+  end
+  local child_window = window_state.child_windows.last
+  while child_window do
+    bring_to_front(child_window)
+    child_window = child_window.prev_sibling
   end
 end
 
@@ -567,7 +576,8 @@ local on_main_frame_location_changed = gui.register_handler(
 
 ---@param player PlayerData
 ---@param window_type string
-local function create_window(player, window_type)
+---@param parent_window WindowState?
+local function create_window(player, window_type, parent_window)
   local window = windows[window_type]
   local window_id = player.next_window_id
   player.next_window_id = window_id + 1
@@ -644,7 +654,13 @@ local function create_window(player, window_type)
       width = window.initial_size.width,
       height = window.initial_size.height,
     },
+    parent_window = parent_window,
+    child_windows = ll.new_list(false, "sibling")
   }
+
+  if parent_window then
+    ll.prepend(parent_window.child_windows, window_state)
+  end
 
   player.windows_by_id[window_id] = window_state
 

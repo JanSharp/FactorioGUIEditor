@@ -69,12 +69,16 @@ global = {}
 ---@field location GuiLocation
 ---@field size Size
 ---@field is_window_edge boolean? @ dummy windows for snapping to edges, only have location and size
+---@field parent_window WindowState?
+---@field child_windows WindowStateList @ sorted from front to back just like `window_list`
 ---
 ---@field hierarchy_elem LuaGuiElement @ for hierarchy windows
 ---@field inspector_elem LuaGuiElement @ for inspector windows
 ---
----@field prev WindowState? @ in front of this window
----@field next WindowState? @ behind this window
+---@field prev_sibling WindowState? @ in front of this window. for `child_windows`
+---@field next_sibling WindowState? @ behind this window. for `child_windows`
+---@field prev WindowState? @ in front of this window. for `window_list`
+---@field next WindowState? @ behind this window. for `window_list`
 
 ---@class WindowStateList
 ---@field first WindowState? @ front
