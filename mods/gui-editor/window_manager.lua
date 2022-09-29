@@ -16,10 +16,10 @@ end
 ---@param player PlayerData
 ---@param window_type string
 local function get_windows(player, window_type)
-  local window_states = player.windows[window_type]
+  local window_states = player.windows_by_type[window_type]
   if not window_states then
     window_states = {}
-    player.windows[window_type] = window_states
+    player.windows_by_type[window_type] = window_states
   end
   return window_states
 end
@@ -718,7 +718,7 @@ end
 
 ---@param player PlayerData
 local function init_player(player)
-  player.windows = {}
+  player.windows_by_type = {}
   ---@param window_id integer
   local function make_dummy_window(window_id)
     return {

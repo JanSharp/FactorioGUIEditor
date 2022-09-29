@@ -9,7 +9,7 @@ global = {}
 ---@class PlayerData
 ---@field player LuaPlayer
 ---@field background_rendering uint64
----@field windows table<string, WindowState[]>
+---@field windows_by_type table<string, WindowState[]>
 ---@field windows_by_id table<integer, WindowState>
 ---@field next_window_id integer
 ---@field resolution DisplayResolution
