@@ -51,9 +51,8 @@ script.on_event(defines.events.on_player_display_scale_changed, function(event)
   window_manager.on_player_display_scale_changed(event)
 end)
 
-script.on_event(defines.events.on_player_created, function(event)
-  local player = game.get_player(event.player_index)
-  ---@cast player -?
+---@param player LuaPlayer
+local function init_player(player)
   local gvs = player.game_view_settings
   gvs.show_controller_gui = false
   gvs.show_minimap = false
@@ -107,16 +106,29 @@ script.on_event(defines.events.on_player_created, function(event)
   }
   static_variables.node = player_data.main_node
   dynamic_variables.node = player_data.main_node
-  global.players[event.player_index] = player_data
+  global.players[player.index] = player_data
 
   window_manager.init_player(player_data)
 
   hierarchy.create_hierarchy(player_data)
   inspector.create_inspector(player_data)
+end
+
+script.on_event(defines.events.on_player_created, function(event)
+  local player = game.get_player(event.player_index)
+  ---@cast player -nil
+  init_player(player)
+end)
+
+script.on_event(defines.events.on_player_removed, function(event)
+  global.players[event.player_index] = nil
 end)
 
 script.on_init(function()
   global.players = {}
+  for _, player in pairs(game.players) do
+    init_player(player)
+  end
   game.tick_paused = true
 end)
 
