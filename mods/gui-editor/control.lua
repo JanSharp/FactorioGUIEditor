@@ -110,8 +110,9 @@ local function init_player(player)
 
   window_manager.init_player(player_data)
 
-  hierarchy.create_hierarchy(player_data)
   inspector.create_inspector(player_data)
+  -- create hierarchy last for it to be the first front and active window
+  hierarchy.create_hierarchy(player_data)
 
   local hierarchy_window = player_data.windows_by_type["hierarchy"][1]
   local inspector_window = player_data.windows_by_type["inspector"][1]
