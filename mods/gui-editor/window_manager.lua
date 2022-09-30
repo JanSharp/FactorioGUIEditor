@@ -204,6 +204,14 @@ local function set_height(window_state, height, anchor)
 end
 
 ---@param window_state WindowState
+---@param size Size
+---@param anchor WindowAnchor
+local function set_size(window_state, size, anchor)
+  set_width(window_state, size.width, anchor)
+  set_height(window_state, size.height, anchor)
+end
+
+---@param window_state WindowState
 ---@param x integer
 ---@param anchor WindowAnchor
 local function set_width_from_location(window_state, x, anchor)
@@ -225,8 +233,16 @@ end
 
 ---@param window_state WindowState
 ---@param location GuiLocation
+---@param anchor WindowAnchor
+local function set_size_from_location(window_state, location, anchor)
+  set_width_from_location(window_state, location.x, anchor)
+  set_height_from_location(window_state, location.y, anchor)
+end
+
+---@param window_state WindowState
+---@param location GuiLocation
 ---@param direction WindowDirection
-local function set_size_from_location(window_state, location, direction)
+local function set_size_from_location_and_direction(window_state, location, direction)
   if bit32.band(direction, directions.left + directions.right) ~= 0 then
     set_width_from_location(window_state, location.x, anchors_for_direction[direction])
   end
@@ -236,15 +252,37 @@ local function set_size_from_location(window_state, location, direction)
 end
 
 ---@param window_state WindowState
+---@param x integer
+local function set_location_x(window_state, x)
+  window_state.location_before_rescale = nil
+  window_state.resolution_for_location_before_rescale = nil
+  window_state.location.x = x
+end
+
+---@param window_state WindowState
+---@param y integer
+local function set_location_y(window_state, y)
+  window_state.location_before_rescale = nil
+  window_state.resolution_for_location_before_rescale = nil
+  window_state.location.y = y
+end
+
+---@param window_state WindowState
+---@param location GuiLocation
+local function set_location(window_state, location)
+  window_state.location_before_rescale = nil
+  window_state.resolution_for_location_before_rescale = nil
+  window_state.location = location
+end
+
+---@param window_state WindowState
 ---@param x integer @ to match the behavior for resizing,
 ---this location is at the opposite side of the anchor
 ---@param anchor WindowAnchor
 local function set_location_x_from_location(window_state, x, anchor)
-  window_state.location_before_rescale = nil
-  window_state.resolution_for_location_before_rescale = nil
   local current_x = get_anchor_x(window_state, opposite_anchors[anchor])
   local diff = x - current_x
-  window_state.location.x = window_state.location.x + diff
+  set_location_x(window_state, window_state.location.x + diff)
 end
 
 ---@param window_state WindowState
@@ -252,11 +290,9 @@ end
 ---this location is at the opposite side of the anchor
 ---@param anchor WindowAnchor
 local function set_location_y_from_location(window_state, y, anchor)
-  window_state.location_before_rescale = nil
-  window_state.resolution_for_location_before_rescale = nil
   local current_y = get_anchor_y(window_state, opposite_anchors[anchor])
   local diff = y - current_y
-  window_state.location.y = window_state.location.y + diff
+  set_location_y(window_state, window_state.location.y + diff)
 end
 
 ---@param window_state WindowState
@@ -448,17 +484,15 @@ local on_resize_frame_location_changed = gui.register_handler(
     local offset = math.floor(10 * player.display_scale + 0.5)
 
     if tags.movement then
-      window_state.location_before_rescale = nil
-      window_state.resolution_for_location_before_rescale = nil
-      window_state.location = {
+      set_location(window_state, {
         x = elem_location.x - offset,
         y = elem_location.y - offset,
-      }
+      })
       snap_movement(window_state)
     else
       elem_location.x = elem_location.x + offset
       elem_location.y = elem_location.y + offset
-      set_size_from_location(window_state, elem_location, tags.direction)
+      set_size_from_location_and_direction(window_state, elem_location, tags.direction)
       snap_resize(window_state, tags.direction)
     end
 
@@ -564,12 +598,12 @@ local on_resize_button_click = gui.register_handler(
       set_resizing(window_state, not window_state.resizing)
     elseif event.button == defines.mouse_button_type.right then
       if event.control then
-        set_location_x_from_location(window_state, 0, anchors.bottom_right)
+        set_location_x(window_state, 0)
         set_width(window_state, window_state.player.resolution.width, anchors.top_left)
         position_invisible_frames(window_state)
         apply_location_and_size_changes(window_state)
       else
-        set_location_y_from_location(window_state, 0, anchors.bottom_right)
+        set_location_y(window_state, 0)
         set_height(window_state, window_state.player.resolution.height, anchors.top_left)
         position_invisible_frames(window_state)
         apply_location_and_size_changes(window_state)
@@ -774,8 +808,10 @@ local function on_player_display_resolution_changed(event)
       ---@cast resolution_for_location_before_rescale -nil
       x_multiplier = (resolution.width / resolution_for_location_before_rescale.width)
       y_multiplier = (resolution.height / resolution_for_location_before_rescale.height)
-      window_state.location.x = math.floor(0.5 + location_before_rescale.x * x_multiplier)
-      window_state.location.y = math.floor(0.5 + location_before_rescale.y * y_multiplier)
+      set_location_x(window_state, math.floor(0.5 + location_before_rescale.x * x_multiplier))
+      set_location_y(window_state, math.floor(0.5 + location_before_rescale.y * y_multiplier))
+      window_state.location_before_rescale = location_before_rescale
+      window_state.resolution_for_location_before_rescale = resolution_for_location_before_rescale
 
       apply_location_and_size_changes(window_state)
     end
@@ -827,7 +863,37 @@ end
 return {
   register_window = register_window,
   get_windows = get_windows,
+  position_invisible_frames = position_invisible_frames,
+  directions = directions,
+  get_horizontal_direction_multiplier = get_horizontal_direction_multiplier,
+  get_vertical_direction_multiplier = get_vertical_direction_multiplier,
+  anchors = anchors,
+  opposite_anchors = opposite_anchors,
+  anchors_for_direction = anchors_for_direction,
+  get_anchor_x = get_anchor_x,
+  get_anchor_y = get_anchor_y,
+  get_anchor = get_anchor,
+  set_width = set_width,
+  set_height = set_height,
+  set_size = set_size,
+  set_width_from_location = set_width_from_location,
+  set_height_from_location = set_height_from_location,
+  set_size_from_location = set_size_from_location,
+  set_size_from_location_and_direction = set_size_from_location_and_direction,
+  set_location_x = set_location_x,
+  set_location_y = set_location_y,
+  set_location = set_location,
+  set_location_x_from_location = set_location_x_from_location,
+  set_location_y_from_location = set_location_y_from_location,
+  overlapping_horizontally = overlapping_horizontally,
+  overlapping_vertically = overlapping_vertically,
+  snap_horizontally = snap_horizontally,
+  snap_vertically = snap_vertically,
+  snap_movement = snap_movement,
+  snap_resize = snap_resize,
+  apply_location_and_size_changes = apply_location_and_size_changes,
   bring_to_front = bring_to_front,
+  set_resizing = set_resizing,
   create_window = create_window,
   on_gui_click = on_gui_click,
   on_player_display_resolution_changed = on_player_display_resolution_changed,
