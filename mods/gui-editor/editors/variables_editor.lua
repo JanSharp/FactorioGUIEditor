@@ -684,8 +684,8 @@ local function update_colored_code_elem(editor_state)
   editor_state.colored_code_elem.text = variables.ast and format(variables.ast) or ""
 end
 
-local on_text_changed = gui.register_handler(
-  "on_string_editor_text_changed",
+local on_variables_editor_text_changed = gui.register_handler(
+  "on_variables_editor_text_changed",
   ---@param event EventData.on_gui_text_changed
   function(player, tags, event)
     editor_util.on_editor_gui_event(player, tags)
@@ -731,7 +731,7 @@ local function create(editor_state)
       font = "default-mono",
     },
     tags = editor_util.get_tags(editor_state),
-    events = {[defines.events.on_gui_text_changed] = on_text_changed},
+    events = {[defines.events.on_gui_text_changed] = on_variables_editor_text_changed},
   })
   editor_util.create_mixed_values_label(editor_state.text_box_elem, editor_state, true)
 

@@ -18,6 +18,16 @@ end
 ---@param name string
 ---@param handler fun(player: PlayerData, tags: any, event: T)
 local function register_handler(name, handler)
+  if handlers_by_func[handler] then
+    local info = debug.getinfo(handler, "S")
+    ---cSpell:ignore linedefined
+    error("Attempt to register the handler function "..info.source..":"..info.linedefined
+      .." twice. (Handler name: '"..name.."')"
+    )
+  end
+  if handlers_by_name[name] then
+    error("Attempt to register 2 handler functions with the name '"..name.."'.")
+  end
   handlers_by_func[handler] = name
   handlers_by_name[name] = handler
   return handler
