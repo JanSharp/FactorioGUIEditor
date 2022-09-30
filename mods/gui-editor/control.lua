@@ -112,6 +112,28 @@ local function init_player(player)
 
   hierarchy.create_hierarchy(player_data)
   inspector.create_inspector(player_data)
+
+  local hierarchy_window = player_data.windows_by_type["hierarchy"][1]
+  local inspector_window = player_data.windows_by_type["inspector"][1]
+  local resolution = player_data.resolution
+  local top_left = window_manager.anchors.top_left
+  local top_right = window_manager.anchors.top_right
+
+  window_manager.set_location_x_from_location(inspector_window, resolution.width, top_left)
+  window_manager.set_size(inspector_window, {
+    width = math.ceil(resolution.width * 0.25),
+    height = resolution.height,
+  }, top_right)
+
+  local location_x = resolution.width - inspector_window.size.width
+  window_manager.set_location_x_from_location(hierarchy_window, location_x, top_left)
+  window_manager.set_size(hierarchy_window, {
+    width = math.ceil(resolution.width * 0.25),
+    height = resolution.height,
+  }, top_right)
+
+  window_manager.apply_location_and_size_changes(inspector_window)
+  window_manager.apply_location_and_size_changes(hierarchy_window)
 end
 
 script.on_event(defines.events.on_player_created, function(event)
