@@ -68,6 +68,10 @@ global = {}
 ---@field resizing boolean
 ---@field location GuiLocation
 ---@field size Size
+---@field location_before_rescale GuiLocation? @ rescale being the auto rescale on resolution change
+---@field resolution_for_location_before_rescale DisplayResolution?
+---@field size_before_rescale Size? @ rescale being the auto rescale on resolution change
+---@field resolution_for_size_before_rescale DisplayResolution?
 ---@field is_window_edge boolean? @ dummy windows for snapping to edges, only have location and size
 ---@field parent_window WindowState?
 ---@field child_windows WindowStateList @ sorted from front to back just like `window_list`

@@ -171,11 +171,15 @@ end
 ---@param width integer
 ---@param anchor WindowAnchor
 local function set_width(window_state, width, anchor)
+  window_state.size_before_rescale = nil
+  window_state.resolution_for_size_before_rescale = nil
   local window = windows[window_state.window_type]
   local scale = window_state.player.display_scale
   -- math.ceil because width should always be an integer
   width = math.max(width, math.ceil(window.minimal_size.width * scale))
   if bit32.band(anchor, directions.right) ~= 0 then
+    window_state.location_before_rescale = nil
+    window_state.resolution_for_location_before_rescale = nil
     window_state.location.x = get_anchor_x(window_state, anchor) - width
   end
   window_state.size.width = width
@@ -185,11 +189,15 @@ end
 ---@param height integer
 ---@param anchor WindowAnchor
 local function set_height(window_state, height, anchor)
+  window_state.size_before_rescale = nil
+  window_state.resolution_for_size_before_rescale = nil
   local window = windows[window_state.window_type]
   local scale = window_state.player.display_scale
   -- math.ceil because height should always be an integer
   height = math.max(height, math.ceil(window.minimal_size.height * scale))
   if bit32.band(anchor, directions.bottom) ~= 0 then
+    window_state.location_before_rescale = nil
+    window_state.resolution_for_location_before_rescale = nil
     window_state.location.y = get_anchor_y(window_state, anchor) - height
   end
   window_state.size.height = height
@@ -232,6 +240,8 @@ end
 ---this location is at the opposite side of the anchor
 ---@param anchor WindowAnchor
 local function set_location_x_from_location(window_state, x, anchor)
+  window_state.location_before_rescale = nil
+  window_state.resolution_for_location_before_rescale = nil
   local current_x = get_anchor_x(window_state, opposite_anchors[anchor])
   local diff = x - current_x
   window_state.location.x = window_state.location.x + diff
@@ -242,6 +252,8 @@ end
 ---this location is at the opposite side of the anchor
 ---@param anchor WindowAnchor
 local function set_location_y_from_location(window_state, y, anchor)
+  window_state.location_before_rescale = nil
+  window_state.resolution_for_location_before_rescale = nil
   local current_y = get_anchor_y(window_state, opposite_anchors[anchor])
   local diff = y - current_y
   window_state.location.y = window_state.location.y + diff
@@ -436,6 +448,8 @@ local on_resize_frame_location_changed = gui.register_handler(
     local offset = math.floor(10 * player.display_scale + 0.5)
 
     if tags.movement then
+      window_state.location_before_rescale = nil
+      window_state.resolution_for_location_before_rescale = nil
       window_state.location = {
         x = elem_location.x - offset,
         y = elem_location.y - offset,
@@ -550,13 +564,13 @@ local on_resize_button_click = gui.register_handler(
       set_resizing(window_state, not window_state.resizing)
     elseif event.button == defines.mouse_button_type.right then
       if event.control then
-        window_state.location.x = 0
-        window_state.size.width = window_state.player.resolution.width
+        set_location_x_from_location(window_state, 0, anchors.bottom_right)
+        set_width(window_state, window_state.player.resolution.width, anchors.top_left)
         position_invisible_frames(window_state)
         apply_location_and_size_changes(window_state)
       else
-        window_state.location.y = 0
-        window_state.size.height = window_state.player.resolution.height
+        set_location_y_from_location(window_state, 0, anchors.bottom_right)
+        set_height(window_state, window_state.player.resolution.height, anchors.top_left)
         position_invisible_frames(window_state)
         apply_location_and_size_changes(window_state)
       end
@@ -697,13 +711,8 @@ local function on_gui_click(event)
 end
 
 ---@param player PlayerData
----@param scale_changed boolean
-local function on_resolution_changed(player, scale_changed)
-  local resolution = player.player.display_resolution
-  local display_scale = player.player.display_scale
-  player.resolution = resolution
-  player.display_scale = display_scale
-
+local function update_screen_edge_windows(player)
+  local resolution = player.resolution
   -- left
   player.windows_by_id[1].size.height = resolution.height
   -- right
@@ -714,34 +723,80 @@ local function on_resolution_changed(player, scale_changed)
   -- bottom
   player.windows_by_id[4].location.y = resolution.height
   player.windows_by_id[4].size.width = resolution.width
-
-  -- stop all resizing because window scaling when changing resolution will be handled differently
-  for _, window_state in pairs(player.windows_by_id) do
-    if scale_changed and not window_state.is_window_edge then
-      -- changing the scale affects the minimal_size, so we reapply width and height
-      set_width(window_state, window_state.size.width, anchors.top_left)
-      set_height(window_state, window_state.size.height, anchors.top_left)
-      -- and applying size to the gui element depends scale regardless of size having changed
-      apply_location_and_size_changes(window_state)
-    end
-    if window_state.resizing then
-      set_resizing(window_state, false)
-    end
-  end
 end
 
 ---@param event EventData.on_player_display_resolution_changed
 local function on_player_display_resolution_changed(event)
   local player = util.get_player(event)
   if not player then return end
-  on_resolution_changed(player, false)
+  local resolution = player.player.display_resolution
+  player.resolution = resolution
+  update_screen_edge_windows(player)
+  for _, window_state in pairs(player.windows_by_id) do
+    if not window_state.is_window_edge then
+      -- stop all resizing because window scaling is handled differently
+      -- unfortunately the location changed events for the resize frames happen before this event
+      -- so there will be a gap round this window and the screen edge if resizing was enabled
+      if window_state.resizing then
+        set_resizing(window_state, false)
+      end
+
+      if not window_state.location_before_rescale then
+        window_state.location_before_rescale = {
+          x = window_state.location.x,
+          y = window_state.location.y,
+        }
+        window_state.resolution_for_location_before_rescale = event.old_resolution
+      end
+
+      if not window_state.size_before_rescale then
+        window_state.size_before_rescale = {
+          width = window_state.size.width,
+          height = window_state.size.height,
+        }
+        window_state.resolution_for_size_before_rescale = event.old_resolution
+      end
+
+      local size = window_state.size_before_rescale
+      local resolution_for_size_before_rescale = window_state.resolution_for_size_before_rescale
+      ---@cast size -nil
+      ---@cast resolution_for_size_before_rescale -nil
+      local x_multiplier = (resolution.width / resolution_for_size_before_rescale.width)
+      local y_multiplier = (resolution.height / resolution_for_size_before_rescale.height)
+      set_width(window_state, math.floor(0.5 + size.width * x_multiplier), anchors.top_left)
+      set_height(window_state, math.floor(0.5 + size.height * y_multiplier), anchors.top_left)
+      window_state.size_before_rescale = size
+      window_state.resolution_for_size_before_rescale = resolution_for_size_before_rescale
+
+      local location_before_rescale = window_state.location_before_rescale
+      local resolution_for_location_before_rescale = window_state.resolution_for_size_before_rescale
+      ---@cast location_before_rescale -nil
+      ---@cast resolution_for_location_before_rescale -nil
+      x_multiplier = (resolution.width / resolution_for_location_before_rescale.width)
+      y_multiplier = (resolution.height / resolution_for_location_before_rescale.height)
+      window_state.location.x = math.floor(0.5 + location_before_rescale.x * x_multiplier)
+      window_state.location.y = math.floor(0.5 + location_before_rescale.y * y_multiplier)
+
+      apply_location_and_size_changes(window_state)
+    end
+  end
 end
 
 ---@param event EventData.on_player_display_scale_changed
 local function on_player_display_scale_changed(event)
   local player = util.get_player(event)
   if not player then return end
-  on_resolution_changed(player, true)
+  player.display_scale = player.player.display_scale
+  update_screen_edge_windows(player)
+  for _, window_state in pairs(player.windows_by_id) do
+    if not window_state.is_window_edge then
+      -- changing the scale affects the minimal_size, so we reapply width and height
+      set_width(window_state, window_state.size.width, anchors.top_left)
+      set_height(window_state, window_state.size.height, anchors.top_left)
+      -- and applying size to the gui element depends on scale regardless of size having changed
+      apply_location_and_size_changes(window_state)
+    end
+  end
 end
 
 ---@param player PlayerData
@@ -764,8 +819,9 @@ local function init_player(player)
     make_dummy_window(4), -- bottom
   }
   player.next_window_id = 5
-
-  on_resolution_changed(player, false)
+  player.resolution = player.player.display_resolution
+  player.display_scale = player.player.display_scale
+  update_screen_edge_windows(player)
 end
 
 return {
