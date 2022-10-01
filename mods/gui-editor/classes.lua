@@ -93,13 +93,13 @@ global = {}
 ---@field editor_type EditorType
 ---@field create fun(editor_state: EditorState)
 ---@field validate_display_value fun(editor_state: EditorState): boolean, string?
+---@field pre_process_display_value fun(editor_state: EditorState)
 ---@field value_to_display_value fun(editor_state: EditorState, value: any): any
 ---@field display_value_to_value fun(editor_state: EditorState, display_value: any): any
 ---@field read_display_value_from_gui fun(editor_state: EditorState)
 ---@field write_display_value_to_gui fun(editor_state: EditorState)
 ---@field get_mixed_display_value fun(editor_state: EditorState): any
 ---@field values_equal fun(editor_state: EditorState, left: any, right: any): boolean
----@field on_post_write_editor_data fun(editor_state: EditorState)?
 
 ---static per editor data
 ---@class EditorParams
@@ -134,6 +134,7 @@ global = {}
 ---@field text_box_elem LuaGuiElement? @ for string editors
 ---@field check_box_elem LuaGuiElement? @ for boolean editors
 ---@field drop_down_elem LuaGuiElement? @ for drop_down editors
+---@field pre_compile_result table @ for variables editors
 ---@field colored_code_elem LuaGuiElement? @ for variables editors
 
 ---static data structure describing what data is being edited
@@ -180,7 +181,6 @@ global = {}
 ---@field compiled_byte_code string? @ the `value` in compiled form, but not `load`ed yet
 ---@field input_variable_references table<string, ScriptVariableReference> @ indexed by variable_name
 ---@field output_variables table<string, ScriptVariable> @ indexed by variable_name
----@field validation_errors string[]
 
 ---@class NodeField
 ---@field field_name string

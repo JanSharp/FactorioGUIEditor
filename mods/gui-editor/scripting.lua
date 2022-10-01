@@ -91,7 +91,6 @@ local function create_script_variables(field_name)
     compiled_byte_code = nil,
     input_variable_references = {},
     output_variables = {},
-    validation_errors = {},
   }
   return variables
 end
@@ -207,7 +206,7 @@ end
 
 local function add_validation_error(position, context, get_msg)
   position = position and (" at "..(position.line or 0)..":"..(position.column or 0)) or ""
-  context.variables.validation_errors[#context.variables.validation_errors+1] = get_msg(position)
+  context.validation_errors[#context.validation_errors+1] = get_msg(position)
 end
 
 local function try_get_index_into_env(index, context)
@@ -311,36 +310,69 @@ local function xpcall_message_handler(msg)
 end
 
 local max_errors_shown = 8
----@param player_data PlayerData
----@param variables ScriptVariables
-local function compile_variables(player_data, variables)
+---@param source string
+---@param source_name string
+local function pre_compile(source, source_name)
+  local result = {}
+
   -- parse
   ---@param errors table
   local function get_message_for_list(errors)
     return error_code_util.get_message_for_list(errors, "syntax errors", max_errors_shown)
   end
-  local ast, parser_errors = parser(variables.display_value, "=("..variables.field_name..")")
-  variables.ast = ast
+  local ast, parser_errors = parser(source, source_name)
+  -- variables.ast = ast
+  result.ast = ast
   if parser_errors[1] then
-    return nil, get_message_for_list(parser_errors)
+    result.error_msg = get_message_for_list(parser_errors)
+    return result
   end
   local jump_linker_errors = jump_linker(ast)
   if jump_linker_errors[1] then
-    return nil, get_message_for_list(jump_linker_errors)
+    result.error_msg = get_message_for_list(jump_linker_errors)
+    return result
   end
 
   -- analyze
   local context = ast_walker.new_context(on_open, nil)
-  context.variables = variables
+  result.context = context
+  -- context.validation_errors = nil
   context.visited_index_nodes = {}
   context.input_variable_names = {}
   context.output_variable_names = {}
   ast_walker.walk_scope(ast, context)
-  if variables.validation_errors[1] then
-    local msg = "Invalid script:\n"..table.concat(variables.validation_errors, "\n")
-    util.clear_table(variables.validation_errors)
-    return nil, msg
+  if context.validation_errors then
+    result.error_msg = "Invalid script:\n"..table.concat(context.validation_errors, "\n")
+    return result
   end
+  result.successful_analysis = true
+
+  -- compile
+  local compiled = compiler(ast, true)
+  local byte_code = dump(compiled)
+  local compiled_value, err = load(byte_code, nil, "b", fake_env)
+  if not compiled_value then
+    error(err) -- Phobos generated broken byte code
+  end
+  result.byte_code = byte_code
+  result.compiled_value = compiled_value
+
+  return result
+end
+
+---@param player_data PlayerData
+---@param variables ScriptVariables
+---@param pre_compile_result table?
+local function compile_variables(player_data, variables, pre_compile_result)
+  pre_compile_result = pre_compile_result
+    or pre_compile(variables.display_value, "=("..variables.field_name..")")
+
+  variables.ast = pre_compile_result.ast
+  if not pre_compile_result.successful_analysis then
+    return nil, pre_compile_result.error_msg
+  end
+
+  local context = pre_compile_result.context
 
   -- prepare variables
   do
@@ -401,15 +433,9 @@ local function compile_variables(player_data, variables)
     prepare_fake_env(variables)
   end
 
-  -- compile and run
-  local compiled = compiler(ast, true)
-  local byte_code = dump(compiled)
-  local compiled_value, err = load(byte_code, nil, "b", fake_env)
-  if not compiled_value then
-    error(err) -- Phobos generated broken byte code
-  end
-  local success
-  success, err = xpcall(compiled_value, xpcall_message_handler)
+  -- run
+  local compiled_value = pre_compile_result.compiled_value
+  local success, err = xpcall(compiled_value, xpcall_message_handler)
   if not success then
     cleanup_fake_env(variables)
     return nil, err
@@ -418,7 +444,7 @@ local function compile_variables(player_data, variables)
   -- success, save values
   do
     variables.value = variables.display_value
-    variables.compiled_byte_code = byte_code
+    variables.compiled_byte_code = pre_compile_result.byte_code
     compiled_value_lut[variables] = compiled_value
 
     -- update output_variables
@@ -559,6 +585,7 @@ end
 ---@class __gui-editor__.scripting
 return {
   create_script_variables = create_script_variables,
+  pre_compile = pre_compile,
   compile_variables = compile_variables,
   restore_variables = restore_variables,
   is_builtin_global = is_builtin_global,

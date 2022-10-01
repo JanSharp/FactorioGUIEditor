@@ -239,9 +239,6 @@ local function write_editor_data(editor_state)
   local data = editor_state.editor_data
 
   if data.data_type == "missing" then
-    if editor.on_post_write_editor_data then
-      editor.on_post_write_editor_data(editor_state)
-    end
     return
   end
 
@@ -270,8 +267,11 @@ local function write_editor_data(editor_state)
     elseif data.data_type == "node_static_variables" then
       ---@param node Node
       function set_value(node)
-        -- TODO: this should be done by the editor
-        local success, msg = scripting.compile_variables(editor_state.player, node.static_variables)
+        local success, msg = scripting.compile_variables(
+          editor_state.player,
+          node.static_variables,
+          editor_state.pre_compile_result
+        )
         set_single_error_state(editor_state, node, field_name, msg)
       end
     elseif data.data_type == "node_field" then
@@ -317,15 +317,9 @@ local function write_editor_data(editor_state)
     end
 
     update_error_sprite(editor_state)
-    if editor.on_post_write_editor_data then
-      editor.on_post_write_editor_data(editor_state)
-    end
     return
   end
 
-  if editor.on_post_write_editor_data then
-    editor.on_post_write_editor_data(editor_state)
-  end
   error("Not implemented '"..data.data_type.."' data type writer.")
 end
 
@@ -382,6 +376,10 @@ end
 local function on_editor_gui_event_internal(editor_state)
   read_display_value_from_gui(editor_state)
   validate_display_value(editor_state)
+  local editor = editors[editor_state.editor_params.editor_type]
+  if editor.pre_process_display_value then
+    editor.pre_process_display_value(editor_state)
+  end
   write_editor_data(editor_state)
   editor_state.mixed_values_label.visible = false
 end

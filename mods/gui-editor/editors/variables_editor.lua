@@ -679,9 +679,10 @@ end
 
 ---@param editor_state EditorState
 local function update_colored_code_elem(editor_state)
-  local variables = editor_state.editor_data.nodes_to_edit[1]
-    .node_fields[editor_state.editor_params.name]--[[@as ScriptVariables]]
-  editor_state.colored_code_elem.text = variables.ast and format(variables.ast) or ""
+  local ast = editor_state.pre_compile_result and editor_state.pre_compile_result.ast
+    or editor_state.editor_data.nodes_to_edit[1]
+      .node_fields[editor_state.editor_params.name]--[[@as ScriptVariables]].ast
+  editor_state.colored_code_elem.text = ast and format(ast) or ""
 end
 
 local on_variables_editor_text_changed = gui.register_handler(
@@ -756,6 +757,15 @@ local function validate_display_value(editor_state)
 end
 
 ---@param editor_state EditorState
+local function pre_process_display_value(editor_state)
+  editor_state.pre_compile_result = scripting.pre_compile(
+    editor_state.display_value,
+    "=("..editor_state.editor_params.name..")"
+  )
+  update_colored_code_elem(editor_state)
+end
+
+---@param editor_state EditorState
 ---@param value string
 local function value_to_display_value(editor_state, value)
   return value
@@ -790,20 +800,15 @@ local function values_equal(editor_state, left, right)
   return left == right
 end
 
----@param editor_state EditorState
-local function on_post_write_editor_data(editor_state)
-  update_colored_code_elem(editor_state)
-end
-
 editor_util.add_editor{
   editor_type = "variables",
   create = create,
   validate_display_value = validate_display_value,
+  pre_process_display_value = pre_process_display_value,
   value_to_display_value = value_to_display_value,
   display_value_to_value = display_value_to_value,
   read_display_value_from_gui = read_display_value_from_gui,
   write_display_value_to_gui = write_display_value_to_gui,
   get_mixed_display_value = get_mixed_display_value,
   values_equal = values_equal,
-  on_post_write_editor_data = on_post_write_editor_data,
 }
