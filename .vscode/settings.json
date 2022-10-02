@@ -26,6 +26,7 @@
     "retstat",
     "selfcall",
     "testblock",
+    "textbox",
     "timeframe",
     "unop",
     "upval",

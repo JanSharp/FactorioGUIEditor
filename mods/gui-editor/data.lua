@@ -92,6 +92,31 @@ styles.gui_editor_invisible_frame = {
   graphical_set = {},
 }
 
+styles.gui_editor_dark_textbox = {
+  type = "textbox_style",
+  parent = "textbox",
+  default_background = {
+    base = {position = {282, 0}, corner_size = 8},
+    shadow = textbox_dirt
+  },
+  active_background ={
+    base = {position = {282, 0}, corner_size = 8},
+    shadow = textbox_dirt
+  },
+  disabled_background = {
+    base = {position = {282, 0}, corner_size = 8},
+    shadow = textbox_dirt
+  },
+}
+
+styles.gui_editor_invisible_textbox = {
+  type = "textbox_style",
+  parent = "textbox",
+  default_background = {},
+  active_background = {},
+  disabled_background = {},
+}
+
 styles.gui_editor_selected_frame_action_button = {
   type = "button_style",
   parent = "frame_action_button",

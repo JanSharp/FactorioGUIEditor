@@ -673,8 +673,10 @@ end
 local function update_string_editor(editor_state)
   local line_count = count_lines(editor_state.display_value or default_value)
   editor_state.wrap_elem.visible = line_count > 1
-  editor_state.text_box_elem.style.height = calculate_text_box_height(line_count)
-  editor_state.colored_code_elem.style.height = calculate_text_box_height(line_count)
+  local height = calculate_text_box_height(line_count)
+  editor_state.text_box_elem.style.height = height
+  editor_state.colored_code_elem.style.height = height
+  editor_state.colored_code_elem.style.top_margin = -height
 end
 
 ---@param editor_state EditorState
@@ -697,12 +699,7 @@ local on_variables_editor_text_changed = gui.register_handler(
 ---@param editor_state EditorState
 local function create(editor_state)
   local params = editor_state.editor_params
-  local main_flow = gui.create_elem(params.parent_elem, {
-    type = "flow",
-    direction = "vertical",
-    style_mods = {horizontally_stretchable = true},
-  })
-  local tab = editor_util.create_table_without_spacing(main_flow, 2)
+  local tab = editor_util.create_table_without_spacing(params.parent_elem, 2)
 
   editor_util.create_editor_name_label(tab, editor_state)
   editor_state.wrap_elem = gui.create_elem(tab, {
@@ -720,29 +717,44 @@ local function create(editor_state)
   if params.optional then
     editor_util.create_optional_switch(tb_parent, editor_state)
   end
-  editor_state.text_box_elem = gui.create_elem(tb_parent, {
+  local tb_flow = gui.create_elem(tb_parent, {
+    type = "flow",
+    direction = "vertical",
+    style_mods = {
+      vertical_spacing = 0,
+    },
+  })
+  editor_state.text_box_elem = gui.create_elem(tb_flow, {
     type = "text-box",
     tooltip = params.description,
     elem_mods = {
       read_only = params.readonly,
     },
+    style = "gui_editor_dark_textbox",
     style_mods = {
       width = 0,
       horizontally_stretchable = true,
       font = "default-mono",
+      ---cSpell:ignore FiraCode
+      -- NOTE: the cursor also seems to be using the font_color, so it has to be non-invisible [...]
+      -- there might be a way to abuse rich text, but the text boxes should have rich text disabled.
+      -- so the other option is to keep the font_color white, but make it a "light" version of the
+      -- font, or make the colored text box use a "bold" version of the font. But factorio doesn't
+      -- ship with either of those versions for mono spaced fonts, so the gui editor would have to
+      -- come with its own font. I'd probably just use FiraCode, because I'm familiar with it.
+      font_color = {1, 1, 1, 1},
     },
     tags = editor_util.get_tags(editor_state),
     events = {[defines.events.on_gui_text_changed] = on_variables_editor_text_changed},
   })
   editor_util.create_mixed_values_label(editor_state.text_box_elem, editor_state, true)
 
-  editor_state.colored_code_elem = gui.create_elem(main_flow, {
+  editor_state.colored_code_elem = gui.create_elem(tb_flow, {
     type = "text-box",
-    elem_mods = {
-      selectable = false,
-    },
-    enabled = false,
+    ignored_by_interaction = true,
+    style = "gui_editor_invisible_textbox",
     style_mods = {
+      padding = {4, 6, 4, 7},
       width = 0,
       horizontally_stretchable = true,
       font = "default-mono",
