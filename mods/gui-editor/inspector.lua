@@ -176,12 +176,27 @@ window_manager.register_window{
     local _, inspector_inner = gui.create_elem(window_state.frame_elem, {
       type = "frame",
       direction = "vertical",
-      name = "inspector",
       style = "inside_shallow_frame",
       style_mods = {
         horizontally_stretchable = true,
         vertically_stretchable = true,
-        padding = 4,
+      },
+      children = {
+        {
+          type = "scroll-pane",
+          style_mods = {
+            horizontally_stretchable = true,
+            vertically_stretchable = true,
+            padding = 4,
+          },
+          children = {
+            {
+              type = "flow",
+              direction = "vertical",
+              name = "inspector",
+            },
+          },
+        },
       },
     })
     ---@cast inspector_inner -?
