@@ -64,6 +64,7 @@ local function create(editor_state)
     },
     style_mods = {
       width = 0,
+      minimal_width = 100,
       horizontally_stretchable = true,
       font = "default-mono",
     },

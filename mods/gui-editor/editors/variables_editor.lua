@@ -733,6 +733,7 @@ local function create(editor_state)
     style = "gui_editor_dark_textbox",
     style_mods = {
       width = 0,
+      minimal_width = 100,
       horizontally_stretchable = true,
       font = "default-mono",
       ---cSpell:ignore FiraCode
@@ -756,6 +757,7 @@ local function create(editor_state)
     style_mods = {
       padding = {4, 6, 4, 7},
       width = 0,
+      minimal_width = 100,
       horizontally_stretchable = true,
       font = "default-mono",
     },
