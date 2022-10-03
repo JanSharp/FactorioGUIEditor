@@ -143,11 +143,13 @@ global = {}
 ---@field nodes_to_edit Node[]
 ---@field requires_rebuild boolean
 
+---@alias GUIEventHandler fun(player: PlayerData, tags: any, event: EventData)
+
 ---@class ExtendedLuaGuiElement.add_param : LuaGuiElement.add_param
 ---@field children ExtendedLuaGuiElement.add_param[]?
 ---@field style_mods LuaStyle?
 ---@field elem_mods LuaGuiElement?
----@field events table<defines.events, fun(player: PlayerData, tags: any, event: EventData)>
+---@field events table<defines.events, GUIEventHandler|(GUIEventHandler[])>
 
 ---@alias ScriptVariableType
 ---| 1 @ static

@@ -1,9 +1,9 @@
 
 local util = require("__gui-editor__.util")
 
----@type table<function, string>
+---@type table<GUIEventHandler, string>
 local handlers_by_func = {}
----@type table<string, function>
+---@type table<string, GUIEventHandler>
 local handlers_by_name = {}
 
 ---@type table<defines.events, string>
@@ -52,7 +52,7 @@ local function handle_gui_event(event)
   if not handler_names then return end
   local player = util.get_player(event)
   if not player then return end
-  for handler_name in pairs(handler_names) do
+  for _, handler_name in pairs(handler_names) do
     local handler = handlers_by_name[handler_name]
     if handler then
       handler(player, tag_data, event)
@@ -92,14 +92,21 @@ local function create_elem(parent_elem, args, elems)
     args.tags = {__gui_editor = tags}
   end
   if events then
-    local handlers = {}
-    for event_id, handler in pairs(events) do
+    local all_handlers = {}
+    for event_id, handlers in pairs(events) do
       local event_name = event_id_to_name[event_id]
-      handlers[event_name] = handlers[event_name] or {}
-      handlers[event_name][handlers_by_func[handler]] = true
+      local current_handlers = {}
+      if type(handlers) == "table" then
+        for i, handler in pairs(handlers) do
+          current_handlers[tostring(i)] = handlers_by_func[handler]
+        end
+      else
+        current_handlers["1"] = handlers_by_func[handlers]
+      end
+      all_handlers[event_name] = current_handlers
     end
     args.tags = args.tags or {__gui_editor = {}}
-    args.tags.__gui_editor.handlers = handlers
+    args.tags.__gui_editor.handlers = all_handlers
   end
   local elem = parent_elem.add(args)
   if args.name then
