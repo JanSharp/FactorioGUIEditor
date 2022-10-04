@@ -90,6 +90,14 @@ local function update_inspector(window_state)
   for _, child in pairs(window_state.inspector_elem.children) do
     child.destroy()
   end
+  -- NOTE: stb_states_by_id cleanup can and should be implemented in a cleaner way
+  local stb_states_by_id = window_state.player.stb_states_by_id
+  for id, stb_state in pairs(stb_states_by_id) do
+    if not stb_state.flow.valid then
+      -- last instruction in the loop
+      stb_states_by_id[id] = nil
+    end
+  end
   if not next(player.selected_nodes) then return end
 
   local selected_flags = 0

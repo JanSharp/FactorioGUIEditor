@@ -42,6 +42,7 @@ local hierarchy = require("__gui-editor__.hierarchy")
 local inspector = require("__gui-editor__.inspector")
 local restart_manager = require("__gui-editor__.restart_manager")
 local window_manager = require("__gui-editor__.window_manager")
+local script_text_box = require("__gui-editor__.script_text_box")
 
 script.on_event(defines.events.on_player_display_resolution_changed, function(event)
   window_manager.on_player_display_resolution_changed(event)
@@ -109,6 +110,7 @@ local function init_player(player)
   global.players[player.index] = player_data
 
   window_manager.init_player(player_data)
+  script_text_box.init_player(player_data)
 
   inspector.create_inspector(player_data)
   -- create hierarchy last for it to be the first front and active window

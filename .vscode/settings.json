@@ -25,6 +25,7 @@
     "repeatstat",
     "retstat",
     "selfcall",
+    "squashable",
     "testblock",
     "textbox",
     "timeframe",

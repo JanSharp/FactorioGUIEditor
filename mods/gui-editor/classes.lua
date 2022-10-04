@@ -27,6 +27,8 @@ global = {}
 ---@field dirty_selection boolean @ has selection been changed without updating the hierarchy and the inspector?
 ---@field nodes_by_id table<integer, Node>
 ---@field next_node_id integer
+---@field stb_states_by_id table<integer, ScriptTextBoxState>
+---@field next_stb_id integer
 
 ---@alias EditorType
 ---| "missing"
@@ -88,6 +90,17 @@ global = {}
 ---@field first WindowState? @ front
 ---@field last WindowState? @ back
 
+---@class ScriptTextBoxState
+---@field stb_id integer
+---@field frame LuaGuiElement
+---@field flow LuaGuiElement
+---@field main_tb LuaGuiElement
+---@field colored_tb LuaGuiElement
+---@field line_numbers_lb LuaGuiElement
+---@field text string
+---@field maximal_size Size
+---@field minimal_size Size
+
 ---100% static
 ---@class Editor
 ---@field editor_type EditorType
@@ -134,8 +147,8 @@ global = {}
 ---@field text_box_elem LuaGuiElement? @ for string editors
 ---@field check_box_elem LuaGuiElement? @ for boolean editors
 ---@field drop_down_elem LuaGuiElement? @ for drop_down editors
----@field pre_compile_result table @ for variables editors
----@field colored_code_elem LuaGuiElement? @ for variables editors
+---@field pre_compile_result table? @ for variables editors
+---@field stb_state ScriptTextBoxState? @ for variables editors
 
 ---static data structure describing what data is being edited
 ---@class EditorData
