@@ -716,7 +716,9 @@ local function create_window(player, window_type, parent_window)
   ll.append(player.window_list, window_state)
   bring_to_front(window_state)
 
-  window.on_create(window_state)
+  if window.on_create then
+    window.on_create(window_state)
+  end
 
   return window_state
 end

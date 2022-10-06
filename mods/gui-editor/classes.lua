@@ -42,7 +42,7 @@ global = {}
 ---@class Window
 ---@field window_type string @ unique identifier
 ---@field title string @ display name/title
----@field on_create fun(window_state: WindowState)
+---@field on_create fun(window_state: WindowState)?
 ---@field initial_size Size
 ---@field minimal_size Size
 
