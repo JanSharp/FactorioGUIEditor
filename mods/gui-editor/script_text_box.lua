@@ -2,6 +2,7 @@
 local gui = require("__gui-editor__.gui")
 local scripting = depends("__gui-editor__.scripting")
 local util = require("__gui-editor__.util")
+local error_code_util = require("__phobos__.error_code_util")
 
 -- this is the formatter from Phobos with a few modifications to insert [color] rich text tags
 
@@ -647,31 +648,38 @@ end
 ---@param text string
 ---@return integer line_count
 ---@return integer longest_line
+---@return integer last_line_length
 local function count_lines(text)
   local line_count = 1
   local longest_line
+  local last_line_length
   do
     local line_start, line_end = text:find("[^\n]*")
-    longest_line = line_end - line_start + 1
+    last_line_length = line_end - line_start + 1
+    longest_line = last_line_length
   end
   for line_start, line_end in text:gmatch("\n()[^\n]*()") do
     line_count = line_count + 1
-    local len = line_end - line_start
-    if len > longest_line then
-      longest_line = len
+    last_line_length = line_end - line_start
+    if last_line_length > longest_line then
+      longest_line = last_line_length
     end
   end
-  return line_count, longest_line
+  return line_count, longest_line, last_line_length
 end
+
+-- font: default-mono, font size: 14
+local char_width = 8
+local char_height = 20
+local tb_padding = 4
+local scroll_bar_size = 12
 
 ---@param stb_state ScriptTextBoxState
 ---@param line_count integer
 ---@return integer pixels
 local function calculate_text_box_height(stb_state, line_count)
-  -- 20 - line height with default-mono font, font size 14
-  -- 4 * 2 - padding for the text boxes
-  -- 12 - scroll bar height
-  return math.max(line_count * 20 + 4 * 2, stb_state.minimal_size.height - 12)
+  local minimal_height = stb_state.minimal_size.height - scroll_bar_size
+  return math.max(line_count * char_height + tb_padding * 2, minimal_height)
 end
 
 ---@param stb_state ScriptTextBoxState
@@ -680,28 +688,27 @@ end
 ---@return integer line_numbers_lb_width
 ---@return integer text_box_width
 local function calculate_widths(stb_state, line_count, longest_line)
-  -- 8 - width of a character with default-mono font, font size 14
-  local line_numbers_lb_width = (#tostring(line_count)) * 8
+  local line_numbers_lb_width = (#tostring(line_count)) * char_width
   -- 4 -- left margin for line numbers
   -- 4 -- left margin for the separator line
   -- 4 -- line separator width
-  -- 12 - scroll bar height
-  local min_width = stb_state.minimal_size.width - 4 - line_numbers_lb_width - 4 - 4 - 12
+  local min_width = stb_state.minimal_size.width - 4 - line_numbers_lb_width - 4 - 4 - scroll_bar_size
   -- 4 -- one extra character to prevent a flash of the text box's scroll bars appearing, because
   --      the character didn't fit with the current size (before the on text changed even fires)
   --      and then 3 more to make it less cramped
-  -- 8 - width of a character with default-mono font, font size 14
-  -- 4 * 2 - padding for the text boxes
   -- 1 - the flash mentioned previously still happened, so 1 extra pixel and it went away
-  return line_numbers_lb_width, math.max((longest_line + 4) * 8 + 4 * 2 + 1, min_width)
+  return line_numbers_lb_width, math.max((longest_line + 4) * char_width + tb_padding * 2 + 1, min_width)
 end
 
 ---@param stb_state ScriptTextBoxState
 local function update_sizes(stb_state)
-  local line_count, longest_line = count_lines(stb_state.text)
+  local line_count, longest_line, last_line_length = count_lines(stb_state.text)
+  stb_state.line_count = line_count
+  stb_state.last_line_length = last_line_length
   local height = calculate_text_box_height(stb_state, line_count)
   local line_numbers_lb_width, width = calculate_widths(stb_state, line_count, longest_line)
   stb_state.flow.style.height = height
+  stb_state.tb_width = width
   stb_state.main_tb.style.width = width
   stb_state.colored_tb.style.width = width
   stb_state.colored_tb.style.left_margin = -width
@@ -726,8 +733,50 @@ end
 ---updates the text for `colored_tb`
 ---@param stb_state ScriptTextBoxState
 ---@param ast AstMain
-local function set_ast(stb_state, ast)
+---@param error_code_instances ErrorCodeInstance[]
+local function set_ast(stb_state, ast, error_code_instances)
   stb_state.colored_tb.text = ast and format_colored(ast) or ""
+
+  -- TODO: combine errors at the same location into one sprite with a combined tooltip
+
+  local last_i = 0
+  if error_code_instances then
+    for i, error_code_instance in pairs(error_code_instances) do
+      last_i = i
+      local sprite = stb_state.error_sprites[i]
+      if not sprite then
+        sprite = stb_state.flow.add{
+          type = "sprite",
+          sprite = "gui-editor-script-error",
+        }
+        stb_state.error_sprites[i] = sprite
+      end
+      local style = sprite.style
+
+      -- NOTE: I'd like to remove the ' at line:column' part of the message, but unfortunately [...]
+      -- it is apart of the location_str which contains more text than just the 'at' part. Like
+      -- ' near foo at 1:1' for example. So we can't just remove the location_str
+      -- and I don't want to add a pattern based string operation here right now
+      sprite.tooltip = error_code_util.get_message(error_code_instance)
+
+      local sprite_width = 8
+      local sprite_height = 6
+      local y = tb_padding - sprite_height
+        + (error_code_instance.start_position.line or stb_state.line_count) * char_height
+      style.top_margin = y
+      local x = -stb_state.tb_width + tb_padding
+        + (error_code_instance.start_position.column or (stb_state.last_line_length + 1)) * char_width
+        - sprite_width
+      style.left_margin = x
+      style.bottom_margin = -y - sprite_height
+      style.right_margin = -x - sprite_width
+    end
+  end
+
+  for i = last_i + 1, #stb_state.error_sprites do
+    stb_state.error_sprites[i].destroy()
+    stb_state.error_sprites[i] = nil
+  end
 end
 
 local on_script_text_box_text_changed = gui.register_handler(
@@ -873,6 +922,7 @@ local function create(player, parent_elem, params)
     main_tb = inner.main_tb,
     colored_tb = inner.colored_tb,
     line_numbers_lb = inner.line_numbers_lb,
+    error_sprites = {},
     maximal_size = params.maximal_size,
     minimal_size = params.minimal_size,
   }

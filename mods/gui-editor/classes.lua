@@ -96,6 +96,10 @@ global = {}
 ---@field main_tb LuaGuiElement
 ---@field colored_tb LuaGuiElement
 ---@field line_numbers_lb LuaGuiElement
+---@field tb_width integer
+---@field line_count integer
+---@field last_line_length integer
+---@field error_sprites LuaGuiElement[]
 ---@field text string
 ---@field maximal_size Size
 ---@field minimal_size Size
@@ -191,6 +195,7 @@ global = {}
 ---@field value string @ the last valid source text
 ---@field display_value string @ the current source text
 ---@field ast AstMain @ the ast for the current `value`
+---@field error_code_instances ErrorCodeInstance[] @ error code instances for the current `ast`
 ---The actual compiled function is cached in the `scripting` file
 ---@field compiled_byte_code string? @ the `value` in compiled form, but not `load`ed yet
 ---@field input_variable_references table<string, ScriptVariableReference> @ indexed by variable_name

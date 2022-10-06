@@ -325,13 +325,16 @@ local function pre_compile(source, source_name)
   result.ast = ast
   if parser_errors[1] then
     result.error_msg = get_message_for_list(parser_errors)
+    result.error_code_instances = parser_errors
     return result
   end
   local jump_linker_errors = jump_linker(ast)
   if jump_linker_errors[1] then
     result.error_msg = get_message_for_list(jump_linker_errors)
+    result.error_code_instances = jump_linker_errors
     return result
   end
+  result.error_code_instances = nil
 
   -- analyze
   local context = ast_walker.new_context(on_open, nil)
@@ -368,6 +371,7 @@ local function compile_variables(player_data, variables, pre_compile_result)
     or pre_compile(variables.display_value, "=("..variables.field_name..")")
 
   variables.ast = pre_compile_result.ast
+  variables.error_code_instances = pre_compile_result.error_code_instances
   if not pre_compile_result.successful_analysis then
     return nil, pre_compile_result.error_msg
   end

@@ -135,6 +135,18 @@ data:extend{
   },
   {
     type = "sprite",
+    name = "gui-editor-script-error",
+    filename = "__core__/graphics/gui-new.png",
+    priority = "medium",
+    width = 8 * 2,
+    height = 6 * 2,
+    x = 80,
+    y = 930,
+    flags = {"gui-icon"},
+    scale = 0.5,
+  },
+  {
+    type = "sprite",
     name = "gui-editor-resize-black",
     filename = "__gui-editor__/graphics/icons/resize-black.png",
     width = 32,

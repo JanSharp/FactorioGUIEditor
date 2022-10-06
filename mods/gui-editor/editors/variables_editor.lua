@@ -14,10 +14,9 @@ end
 
 ---@param editor_state EditorState
 local function update_colored_code_elem(editor_state)
-  local ast = editor_state.pre_compile_result and editor_state.pre_compile_result.ast
-    or editor_state.editor_data.nodes_to_edit[1]
-      .node_fields[editor_state.editor_params.name]--[[@as ScriptVariables]].ast
-  script_text_box.set_ast(editor_state.stb_state, ast)
+  local unnamed = editor_state.pre_compile_result or editor_state.editor_data.nodes_to_edit[1]
+    .node_fields[editor_state.editor_params.name]--[[@as ScriptVariables]]
+  script_text_box.set_ast(editor_state.stb_state, unnamed.ast, unnamed.error_code_instances)
 end
 
 local on_variables_editor_text_changed = gui.register_handler(
