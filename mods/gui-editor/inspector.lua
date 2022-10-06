@@ -23,7 +23,7 @@ local function get_base_params_for_field(window_state, field, editor_type)
   return {
     editor_type = editor_type,
     parent_elem = window_state.inspector_elem,
-    window_name = "inspector",
+    window_state = window_state,
     name = field.name,
     description = field.description,
     readonly = not field.write,
@@ -109,7 +109,7 @@ local function update_inspector(window_state)
     end
   end
 
-  player.active_editors = {}
+  window_state.active_editors = {}
 
   do
     local all_nodes = {}
@@ -120,7 +120,7 @@ local function update_inspector(window_state)
     editors.create_editor(player, {
       editor_type = "string",
       parent_elem = window_state.inspector_elem,
-      window_name = "inspector",
+      window_state = window_state,
       name = "node_name",
       description = nil,
       readonly = false,
@@ -135,7 +135,7 @@ local function update_inspector(window_state)
     editors.create_editor(player, {
       editor_type = "variables",
       parent_elem = window_state.inspector_elem,
-      window_name = "inspector",
+      window_state = window_state,
       name = "static_variables",
       description = nil,
       readonly = false,
@@ -209,6 +209,9 @@ window_manager.register_window{
     })
     ---@cast inspector_inner -?
     window_state.inspector_elem = inspector_inner.inspector
+    -- doesn't need to be initialized because the function that creates editors for the inspector
+    -- sets active_editors to `{}`
+    -- window_state.active_editors = {}
   end
 }
 

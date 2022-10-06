@@ -3,6 +3,7 @@ local util = require("__gui-editor__.util")
 local gui = require("__gui-editor__.gui")
 local nodes = depends("__gui-editor__.nodes")
 local scripting = depends("__gui-editor__.scripting")
+local window_manager = depends("__gui-editor__.window_manager")
 
 ---@type table<EditorType, Editor>
 local editors = {}
@@ -23,7 +24,7 @@ end
 ---@param editor_state EditorState
 local function get_tags(editor_state)
   return {
-    window_name = editor_state.editor_params.window_name,
+    window_id = editor_state.editor_params.window_state.id,
     editor_name = editor_state.editor_params.name,
   }
 end
@@ -31,7 +32,8 @@ end
 ---@param player PlayerData
 ---@param tags any
 local function get_editor_state_from_tags(player, tags)
-  return player.active_editors[tags.window_name][tags.editor_name]
+  local window_state = window_manager.get_window(player, tags.window_id)
+  return window_state.active_editors[tags.editor_name]
 end
 
 ---@param parent_elem LuaGuiElement

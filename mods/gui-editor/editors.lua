@@ -21,12 +21,7 @@ local function create_editor(player, editor_params, editor_data)
     error_msgs = {},
   }
 
-  local active_editors = player.active_editors[editor_params.window_name]
-  if not active_editors then
-    active_editors = {}
-    player.active_editors[editor_params.window_name] = active_editors
-  end
-  active_editors[editor_params.name] = editor_state
+  editor_params.window_state.active_editors[editor_params.name] = editor_state
 
   local editor = editor_util.editors[editor_params.editor_type]
   editor.create(editor_state)

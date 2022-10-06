@@ -25,6 +25,12 @@ local function get_windows(player, window_type)
   return window_states
 end
 
+---@param player PlayerData
+---@param window_id integer
+local function get_window(player, window_id)
+  return player.windows_by_id[window_id]
+end
+
 ---@param window_state WindowState
 local function position_invisible_frames(window_state)
   if not window_state.resizing then return end
@@ -862,9 +868,11 @@ local function init_player(player)
   update_screen_edge_windows(player)
 end
 
+---@class __gui-editor__.window_manager
 return {
   register_window = register_window,
   get_windows = get_windows,
+  get_window = get_window,
   position_invisible_frames = position_invisible_frames,
   directions = directions,
   get_horizontal_direction_multiplier = get_horizontal_direction_multiplier,
