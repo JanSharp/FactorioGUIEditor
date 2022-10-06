@@ -84,20 +84,25 @@ local function create_inspector_field_editor(window_state, field)
   })
 end
 
----@param window_state WindowState
-local function update_inspector(window_state)
-  local player = window_state.player
-  for _, child in pairs(window_state.inspector_elem.children) do
-    child.destroy()
-  end
+---@param player PlayerData
+local function cleanup_stb_states(player)
   -- NOTE: stb_states_by_id cleanup can and should be implemented in a cleaner way
-  local stb_states_by_id = window_state.player.stb_states_by_id
+  local stb_states_by_id = player.stb_states_by_id
   for id, stb_state in pairs(stb_states_by_id) do
     if not stb_state.flow.valid then
       -- last instruction in the loop
       stb_states_by_id[id] = nil
     end
   end
+end
+
+---@param window_state WindowState
+local function update_inspector(window_state)
+  local player = window_state.player
+  for _, child in pairs(window_state.inspector_elem.children) do
+    child.destroy()
+  end
+  cleanup_stb_states(player)
   if not next(player.selected_nodes) then return end
 
   local selected_flags = 0
@@ -212,7 +217,12 @@ window_manager.register_window{
     -- doesn't need to be initialized because the function that creates editors for the inspector
     -- sets active_editors to `{}`
     -- window_state.active_editors = {}
-  end
+  end,
+
+  ---@param window_state WindowState
+  on_close = function(window_state)
+    cleanup_stb_states(window_state.player)
+  end,
 }
 
 ---@param player PlayerData

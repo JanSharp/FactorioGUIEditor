@@ -480,6 +480,71 @@ local function bring_to_front(window_state)
   end
 end
 
+---@param window_state WindowState
+local function destroy_invisible_frames(window_state)
+  window_state.movement_frame.destroy()
+  window_state.left_resize_frame.destroy()
+  window_state.right_resize_frame.destroy()
+  window_state.top_resize_frame.destroy()
+  window_state.bottom_resize_frame.destroy()
+  window_state.top_left_resize_frame.destroy()
+  window_state.top_right_resize_frame.destroy()
+  window_state.bottom_left_resize_frame.destroy()
+  window_state.bottom_right_resize_frame.destroy()
+end
+
+---@param window_state WindowState
+---@return boolean closed_successfully @ closing the window might be cancelled, making this `false`
+local function close_window_internal(window_state)
+  local window = windows[window_state.window_type]
+  if window.on_pre_close and window.on_pre_close(window_state) then
+    return false
+  end
+
+  local child_window = window_state.child_windows.first
+  while child_window do
+    if not close_window_internal(child_window) then
+      -- instantly return, child windows behind the window that didn't close also stay open
+      return false
+    end
+    child_window = child_window.next_sibling
+  end
+
+  if window_state.parent_window then
+    ll.remove(window_state.parent_window.child_windows, window_state)
+  end
+  ll.remove(window_state.player.window_list, window_state)
+  local windows_by_type = window_state.player.windows_by_type[window_state.window_type]
+  for i = 1, #windows_by_type do
+    if windows_by_type[i] == window_state then
+      table.remove(windows_by_type, i)
+      break
+    end
+  end
+  window_state.player.windows_by_id[window_state.id] = nil
+
+  if window_state.resizing then
+    destroy_invisible_frames(window_state)
+  end
+  window_state.frame_elem.destroy()
+
+  if window.on_close then
+    window.on_close(window_state)
+  end
+  return true
+end
+
+---@param window_state WindowState
+---@return boolean closed_successfully @ closing the window might be cancelled, making this `false`
+local function close_window(window_state)
+  local result = close_window_internal(window_state)
+  local new_front = window_state.player.window_list.first
+  if new_front then
+    bring_to_front(new_front)
+  end
+  return result
+end
+
 local on_resize_frame_location_changed = gui.register_handler(
   "on_resize_frame_location_changed",
   ---@param event EventData.on_gui_location_changed
@@ -581,15 +646,7 @@ local function set_resizing(window_state, resizing)
     window_state.bottom_right_resize_frame = create(window_state, directions.bottom_right)
     position_invisible_frames(window_state)
   else
-    window_state.movement_frame.destroy()
-    window_state.left_resize_frame.destroy()
-    window_state.right_resize_frame.destroy()
-    window_state.top_resize_frame.destroy()
-    window_state.bottom_resize_frame.destroy()
-    window_state.top_left_resize_frame.destroy()
-    window_state.top_right_resize_frame.destroy()
-    window_state.bottom_left_resize_frame.destroy()
-    window_state.bottom_right_resize_frame.destroy()
+    destroy_invisible_frames(window_state)
   end
 end
 
@@ -615,6 +672,14 @@ local on_resize_button_click = gui.register_handler(
         apply_location_and_size_changes(window_state)
       end
     end
+  end
+)
+
+local on_close_button_click = gui.register_handler(
+  "on_close_button_click",
+  ---@param event EventData.on_gui_click
+  function (player, tags, event)
+    close_window(player.windows_by_id[tags.window_id])
   end
 )
 
@@ -683,6 +748,8 @@ local function create_window(player, window_type, parent_window)
             sprite = "utility/close_white",
             hovered_sprite = "utility/close_black",
             clicked_sprite = "utility/close_black",
+            tags = {window_id = window_id},
+            events = {[defines.events.on_gui_click] = on_close_button_click},
           },
         },
       },
@@ -903,6 +970,7 @@ return {
   snap_resize = snap_resize,
   apply_location_and_size_changes = apply_location_and_size_changes,
   bring_to_front = bring_to_front,
+  close_window = close_window,
   set_resizing = set_resizing,
   create_window = create_window,
   on_gui_click = on_gui_click,
