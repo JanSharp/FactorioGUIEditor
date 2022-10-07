@@ -912,7 +912,6 @@ local function create(player, parent_elem, params)
       },
     },
   })
-  ---@cast inner -nil
   ---@type ScriptTextBoxState
   local stb_state = {
     stb_id = stb_id,

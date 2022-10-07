@@ -120,6 +120,21 @@ styles.gui_editor_selected_frame_action_button = {
   },
 }
 
+styles.gui_editor_list_box_scroll_pane = {
+  type = "scroll_pane_style",
+  parent = "naked_scroll_pane",
+  -- copied from `list_box_scroll_pane`
+  background_graphical_set =
+  {
+    position = {282, 17},
+    corner_size = 8,
+    overall_tiling_vertical_size = 20,
+    overall_tiling_vertical_spacing = 8,
+    overall_tiling_vertical_padding = 4,
+    overall_tiling_horizontal_padding = 4,
+  },
+}
+
 -- to make the arrow tooltips for invisible resize frames look better
 styles.tooltip_label.minimal_width = 0
 
@@ -159,5 +174,13 @@ data:extend{
     name = "default-mono",
     from = "default-mono",
     size = 14,
+  },
+  {
+    type = "custom-input",
+    name = "gui-editor-open-runner",
+    key_sequence = "CONTROL + SHIFT + P",
+    enabled_while_spectating = true,
+    enabled_while_in_cutscene = true,
+    action = "lua",
   },
 }

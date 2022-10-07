@@ -43,6 +43,7 @@ local inspector = require("__gui-editor__.inspector")
 local restart_manager = require("__gui-editor__.restart_manager")
 local window_manager = require("__gui-editor__.window_manager")
 local script_text_box = require("__gui-editor__.script_text_box")
+local runner = require("__gui-editor__.runner")
 
 script.on_event(defines.events.on_player_display_resolution_changed, function(event)
   window_manager.on_player_display_resolution_changed(event)
@@ -180,4 +181,10 @@ gui.register_for_all_gui_events()
 script.on_event(defines.events.on_gui_click, function(event)
   window_manager.on_gui_click(event)
   gui.handle_gui_event(event)
+end)
+
+script.on_event("gui-editor-open-runner", function(event)
+  local player = util.get_player(event)
+  if not player then return end
+  runner.activate_runner(player)
 end)

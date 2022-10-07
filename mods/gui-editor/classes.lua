@@ -10,7 +10,7 @@ global = {}
 ---@field player LuaPlayer
 ---@field background_rendering uint64
 ---@field window_list WindowStateList @ windows in order by "in front"/"in back"
----@field windows_by_type table<string, WindowState[]>
+---@field windows_by_type table<WindowType, WindowState[]>
 ---@field windows_by_id table<integer, WindowState>
 ---@field next_window_id integer
 ---@field resolution DisplayResolution
@@ -38,8 +38,13 @@ global = {}
 
 ---@alias Size {width: integer, height: integer}
 
+---@alias WindowType
+---| "hierarchy"
+---| "inspector"
+---| "runner"
+
 ---@class Window
----@field window_type string @ unique identifier
+---@field window_type WindowType @ unique identifier
 ---@field title string @ display name/title
 ---@field on_create fun(window_state: WindowState)?
 ---@field on_pre_close (fun(window_state: WindowState):boolean?)? @ return `true` to cancel closing
@@ -85,6 +90,11 @@ global = {}
 ---@field inspector_elem LuaGuiElement
 ---@field active_editors table<string, EditorState> @ (editor) name (ie. field name) => editor_state
 ---
+---runner windows
+---@field search_field LuaGuiElement
+---@field list_flow LuaGuiElement
+---@field shown_entries RunnerListEntry[]
+---
 ---@field prev_sibling WindowState? @ in front of this window. for `child_windows`
 ---@field next_sibling WindowState? @ behind this window. for `child_windows`
 ---@field prev WindowState? @ in front of this window. for `window_list`
@@ -93,6 +103,15 @@ global = {}
 ---@class WindowStateList
 ---@field first WindowState? @ front
 ---@field last WindowState? @ back
+
+---@alias RunnerListEntryType
+---| "create_window"
+
+---@class RunnerListEntry
+---@field button LuaGuiElement
+---@field index integer @ index in `shown_entries`
+---@field entry_type RunnerListEntryType
+---@field window_type WindowType @ for type "create_window"
 
 ---@class ScriptTextBoxState
 ---@field stb_id integer

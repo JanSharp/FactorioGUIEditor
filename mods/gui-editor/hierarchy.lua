@@ -177,7 +177,6 @@ function update_hierarchy(window_state)
         },
       },
     })
-    ---@cast inner -?
     node.hierarchy_button = inner.button
     node.flat_index = flat_index
     flat_nodes[flat_index] = node
@@ -360,7 +359,6 @@ window_manager.register_window{
         },
       },
     })
-    ---@cast hierarchy_inner -?
     window_state.hierarchy_elem = hierarchy_inner.hierarchy
   end,
 }

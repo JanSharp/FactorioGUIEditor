@@ -212,7 +212,6 @@ window_manager.register_window{
         },
       },
     })
-    ---@cast inspector_inner -?
     window_state.inspector_elem = inspector_inner.inspector
     -- doesn't need to be initialized because the function that creates editors for the inspector
     -- sets active_editors to `{}`

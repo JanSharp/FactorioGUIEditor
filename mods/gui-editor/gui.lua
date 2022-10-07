@@ -77,7 +77,8 @@ end
 ---@param args ExtendedLuaGuiElement.add_param
 ---@param elems table<string, LuaGuiElement>?
 ---@return LuaGuiElement elem
----@return table<string, LuaGuiElement>? inner_elems
+---@return table<string, LuaGuiElement> inner_elems @
+---contains all elements which have a `name`, otherwise `nil`
 local function create_elem(parent_elem, args, elems)
   local children = args.children
   local style_mods = args.style_mods
@@ -137,7 +138,7 @@ local function create_elem(parent_elem, args, elems)
   if tags then
     tags.handler_names = nil
   end
-  return elem, elems
+  return elem, elems--[[@as table<string, LuaGuiElement>]]
 end
 
 ---@class __gui-editor__.gui

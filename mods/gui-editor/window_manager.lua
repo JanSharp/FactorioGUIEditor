@@ -612,7 +612,6 @@ local function create_invisible_frame(window_state, direction, movement)
       },
     },
   })
-  ---@cast inner -nil
   inner.drag_elem.drag_target = frame
   return frame
 end
@@ -678,13 +677,13 @@ local on_resize_button_click = gui.register_handler(
 local on_close_button_click = gui.register_handler(
   "on_close_button_click",
   ---@param event EventData.on_gui_click
-  function (player, tags, event)
+  function(player, tags, event)
     close_window(player.windows_by_id[tags.window_id])
   end
 )
 
 ---@param player PlayerData
----@param window_type string
+---@param window_type WindowType
 ---@param parent_window WindowState?
 local function create_window(player, window_type, parent_window)
   local window = windows[window_type]
@@ -755,7 +754,6 @@ local function create_window(player, window_type, parent_window)
       },
     },
   })
-  ---@cast inner -nil
 
   ---@type WindowState
   local window_state = {
