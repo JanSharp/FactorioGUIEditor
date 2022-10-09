@@ -439,7 +439,7 @@ local function snap_resize(window_state, direction)
 end
 
 ---@param window_state WindowState
-local function apply_location_and_size_changes(window_state)
+local function apply_location_and_size_changes_internal(window_state)
   window_state.frame_elem.location = window_state.location
   local scale = window_state.player.display_scale
   local style = window_state.frame_elem.style
@@ -456,6 +456,15 @@ local function apply_location_and_size_changes(window_state)
   window_state.actual_size.height = height
   style.width = width
   style.height = height
+end
+
+---@param window_state WindowState
+local function apply_location_and_size_changes(window_state)
+  apply_location_and_size_changes_internal(window_state)
+  local window = windows[window_state.window_type]
+  if window.on_location_and_size_applied then
+    window.on_location_and_size_applied(window_state)
+  end
 end
 
 ---@param window_state WindowState
@@ -787,7 +796,7 @@ local function create_window(player, window_type, parent_window)
   }
 
   set_size(window_state, window.initial_size, anchors.top_left)
-  apply_location_and_size_changes(window_state)
+  apply_location_and_size_changes_internal(window_state)
 
   if parent_window then
     ll.prepend(parent_window.child_windows, window_state)
