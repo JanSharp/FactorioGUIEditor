@@ -443,8 +443,19 @@ local function apply_location_and_size_changes(window_state)
   window_state.frame_elem.location = window_state.location
   local scale = window_state.player.display_scale
   local style = window_state.frame_elem.style
-  style.width = window_state.size.width / scale
-  style.height = window_state.size.height / scale
+  -- math.ceil appears to match the game pretty well. Scale 0.75 does not jiggle the window
+  -- by 1 pixel when resizing the top left. Scales > 1 do still jiggle because the location
+  -- of the window as well as the size would have to change in order for the bottom and right
+  -- sides to remain at the same pixel while resizing. For example at 1.5 scale, going from
+  -- 5 internal width to 6 results in 4 actual width to 4, so unchanged, however the location
+  -- of the window did change by 1 pixel. In that case the window would have to be offset
+  -- by 1 pixel to the right to keep the right side at the same location
+  local width = math.ceil(window_state.size.width / scale)
+  local height = math.ceil(window_state.size.height / scale)
+  window_state.actual_size.width = width
+  window_state.actual_size.height = height
+  style.width = width
+  style.height = height
 end
 
 ---@param window_state WindowState
@@ -693,10 +704,6 @@ local function create_window(player, window_type, parent_window)
   local frame, inner = gui.create_elem(player.player.gui.screen, {
     type = "frame",
     direction = "vertical",
-    style_mods = {
-      width = window.initial_size.width,
-      height = window.initial_size.height,
-    },
     -- needs the window_id for the generic "bring clicked window to the front" logic
     tags = {window_id = window_id},
     -- no event handler for on_location_changed because on location changed fires before
@@ -767,13 +774,20 @@ local function create_window(player, window_type, parent_window)
     resize_button = inner.resize_button,
     resizing = false,
     location = {x = 0, y = 0},
-    size = {
-      width = window.initial_size.width,
-      height = window.initial_size.height,
+    size = { -- initialized using `set_size`
+      width = -1,
+      height = -1,
+    },
+    actual_size = { -- initialized using `apply_location_and_size_changes_internal`
+      width = -1,
+      height = -1,
     },
     parent_window = parent_window,
-    child_windows = ll.new_list(false, "sibling")
+    child_windows = ll.new_list(false, "sibling"),
   }
+
+  set_size(window_state, window.initial_size, anchors.top_left)
+  apply_location_and_size_changes(window_state)
 
   if parent_window then
     ll.prepend(parent_window.child_windows, window_state)

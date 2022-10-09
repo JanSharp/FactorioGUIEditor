@@ -75,6 +75,7 @@ global = {}
 ---@field resizing boolean
 ---@field location GuiLocation
 ---@field size Size
+---@field actual_size Size
 ---@field location_before_rescale GuiLocation? @ rescale being the auto rescale on resolution change
 ---@field resolution_for_location_before_rescale DisplayResolution?
 ---@field size_before_rescale Size? @ rescale being the auto rescale on resolution change
