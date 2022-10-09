@@ -92,12 +92,13 @@ styles.gui_editor_invisible_frame = {
   graphical_set = {},
 }
 
-styles.gui_editor_invisible_textbox = {
+styles.gui_editor_script_textbox = {
   type = "textbox_style",
   parent = "textbox",
   default_background = {},
   active_background = {},
   disabled_background = {},
+  selection_background_color = {80, 80, 80},
 }
 
 styles.gui_editor_selected_frame_action_button = {

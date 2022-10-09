@@ -871,7 +871,7 @@ local function create(player, parent_elem, params)
                 elem_mods = {
                   read_only = params.read_only,
                 },
-                style = "gui_editor_invisible_textbox",
+                style = "gui_editor_script_textbox",
                 style_mods = {
                   padding = 4,
                   maximal_width = 0,
