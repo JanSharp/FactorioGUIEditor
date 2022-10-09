@@ -120,7 +120,7 @@ global = {}
 ---@field frame LuaGuiElement
 ---@field flow LuaGuiElement
 ---@field main_tb LuaGuiElement
----@field colored_tb LuaGuiElement
+---@field colored_label LuaGuiElement
 ---@field line_numbers_lb LuaGuiElement
 ---@field tb_width integer
 ---@field line_count integer

@@ -710,8 +710,8 @@ local function update_sizes(stb_state)
   stb_state.flow.style.height = height
   stb_state.tb_width = width
   stb_state.main_tb.style.width = width
-  stb_state.colored_tb.style.width = width
-  stb_state.colored_tb.style.left_margin = -width
+  stb_state.colored_label.style.width = width
+  stb_state.colored_label.style.left_margin = -width
   stb_state.line_numbers_lb.style.width = line_numbers_lb_width
   local line_numbers = {}
   local pattern = "%"..#tostring(line_count).."d"
@@ -730,12 +730,12 @@ local function set_text(stb_state, text)
   update_sizes(stb_state)
 end
 
----updates the text for `colored_tb`
+---updates the text for `colored_label`
 ---@param stb_state ScriptTextBoxState
 ---@param ast AstMain
 ---@param error_code_instances ErrorCodeInstance[]
 local function set_ast(stb_state, ast, error_code_instances)
-  stb_state.colored_tb.text = ast and format_colored(ast) or ""
+  stb_state.colored_label.caption = ast and format_colored(ast) or ""
 
   -- TODO: combine errors at the same location into one sprite with a combined tooltip
 
@@ -815,7 +815,7 @@ local function create(player, parent_elem, params)
   --       label
   --       line
   --       text-box (calculated width, calculated min width)
-  --       text-box (calculated width, calculated min width)
+  --       label (calculated width, calculated min width)
 
   local frame, inner = gui.create_elem(parent_elem, {
     type = "frame",
@@ -895,15 +895,15 @@ local function create(player, parent_elem, params)
                 },
               },
               {
-                type = "text-box",
-                name = "colored_tb",
+                type = "label",
+                name = "colored_label",
                 ignored_by_interaction = true,
-                style = "gui_editor_invisible_textbox",
                 style_mods = {
                   padding = 4,
                   maximal_width = 0,
                   vertically_stretchable = true,
                   font = "default-mono",
+                  single_line = false,
                 },
               },
             },
@@ -919,7 +919,7 @@ local function create(player, parent_elem, params)
     text = starting_text,
     flow = inner.flow,
     main_tb = inner.main_tb,
-    colored_tb = inner.colored_tb,
+    colored_label = inner.colored_label,
     line_numbers_lb = inner.line_numbers_lb,
     error_sprites = {},
     maximal_size = params.maximal_size,
