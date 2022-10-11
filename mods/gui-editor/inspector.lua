@@ -89,7 +89,7 @@ local function cleanup_stb_states(player)
   -- NOTE: stb_states_by_id cleanup can and should be implemented in a cleaner way
   local stb_states_by_id = player.stb_states_by_id
   for id, stb_state in pairs(stb_states_by_id) do
-    if not stb_state.flow.valid then
+    if not stb_state.frame.valid then
       -- last instruction in the loop
       stb_states_by_id[id] = nil
     end
