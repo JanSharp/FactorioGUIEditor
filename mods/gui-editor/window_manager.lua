@@ -927,6 +927,9 @@ local function on_player_display_scale_changed(event)
       set_height(window_state, window_state.size.height, anchors.top_left)
       -- and applying size to the gui element depends on scale regardless of size having changed
       apply_location_and_size_changes(window_state)
+      if window_state.resizing then
+        position_invisible_frames(window_state)
+      end
     end
   end
 end
