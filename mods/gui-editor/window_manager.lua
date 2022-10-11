@@ -6,6 +6,49 @@ local ll = require("__gui-editor__.linked_list")
 ---@type table<string, Window>
 local windows = {}
 
+---@alias WindowManagerEventHandler fun(window_state: WindowState)
+
+---@type table<WindowManagerEventHandler, true>
+local on_window_created_handlers = {}
+---@type table<WindowManagerEventHandler, true>
+local on_window_closed_handlers = {}
+---@type table<WindowManagerEventHandler, true>
+local on_display_title_changed_handlers = {}
+
+---@param handler WindowManagerEventHandler
+local function on_window_created(handler)
+  on_window_created_handlers[handler] = true
+end
+---@param handler WindowManagerEventHandler
+local function on_window_closed(handler)
+  on_window_closed_handlers[handler] = true
+end
+---@param handler WindowManagerEventHandler
+local function on_display_title_changed(handler)
+  on_display_title_changed_handlers[handler] = true
+end
+
+---@param handlers table<WindowManagerEventHandler, true>
+---@param window_state WindowState
+local function raise_event(handlers, window_state)
+  for handler in pairs(handlers) do
+    handler(window_state)
+  end
+end
+
+---@param window_state WindowState
+local function raise_on_window_created(window_state)
+  raise_event(on_window_created_handlers, window_state)
+end
+---@param window_state WindowState
+local function raise_on_window_closed(window_state)
+  raise_event(on_window_closed_handlers, window_state)
+end
+---@param window_state WindowState
+local function raise_on_display_title_changed(window_state)
+  raise_event(on_display_title_changed_handlers, window_state)
+end
+
 ---@param window Window
 local function register_window(window)
   if windows[window.window_type] then
@@ -509,8 +552,12 @@ end
 ---@param display_title string
 local function set_display_title(window_state, display_title)
   if window_state.display_title == display_title then return end
+  local do_raise = not not window_state.display_title
   window_state.display_title = display_title
   window_state.title_label.caption = display_title
+  if do_raise then
+    raise_on_display_title_changed(window_state)
+  end
 end
 
 ---@param window_states WindowState
@@ -613,6 +660,7 @@ local function close_window_internal(window_state)
   if window.on_closed then
     window.on_closed(window_state)
   end
+  raise_on_window_closed(window_state)
   return true
 end
 
@@ -877,6 +925,8 @@ local function create_window(player, window_type, parent_window)
     window.on_created(window_state)
   end
 
+  raise_on_window_created(window_state)
+
   return window_state
 end
 
@@ -1027,6 +1077,9 @@ end
 
 ---@class __gui-editor__.window_manager
 return {
+  on_window_created = on_window_created,
+  on_window_closed = on_window_closed,
+  on_display_title_changed = on_display_title_changed,
   register_window = register_window,
   get_windows = get_windows,
   get_window = get_window,
