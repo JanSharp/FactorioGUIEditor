@@ -73,24 +73,6 @@ local function create_list_entry_button(window_state, entry)
   })
 end
 
----@type table<string, RunnerListEntry>
-local search_terms = {}
-do
-  local window_types = {
-    "inspector",
-    "hierarchy",
-  }
-  table.sort(window_types)
-  for _, window_type in pairs(window_types) do
-    ---@type RunnerListEntry
-    local entry = {
-      entry_type = "create_window",
-      window_type = window_type,
-    }
-    search_terms[get_display_text(entry):lower()] = entry
-  end
-end
-
 ---@param window_state WindowState
 local function update_list(window_state)
   local shown_entries = window_state.shown_entries
@@ -107,7 +89,7 @@ local function update_list(window_state)
 
   -- TODO: escape input string so it's not a pattern
   local query = window_state.search_field.text:lower()
-  for term, entry_base in pairs(search_terms) do
+  for term, entry_base in pairs(window_state.player.runner_search_terms) do
     if term:find("^"..query) then
       text_start_matches[term] = entry_base
     elseif term:find("%s"..query) then
@@ -248,7 +230,43 @@ local function activate_runner(player)
   end
 end
 
+local window_types = {
+  "inspector",
+  "hierarchy",
+}
+table.sort(window_types)
+
+---@param player PlayerData
+---@param entry RunnerListEntry
+local function add_search_term(player, entry)
+  local key = get_display_text(entry):lower()
+  if player.runner_search_terms[key] then
+    error("Attempt to add search term '"..key.."' twice.")
+  end
+  player.runner_search_terms[key] = entry
+end
+
+---@param player PlayerData
+---@param entry RunnerListEntry
+local function remove_search_term(player, entry)
+  player.runner_search_terms[get_display_text(entry):lower()] = nil
+end
+
+---@param player PlayerData
+local function init_player(player)
+  player.runner_search_terms = {}
+  for _, window_type in pairs(window_types) do
+    add_search_term(player, {
+      entry_type = "create_window",
+      window_type = window_type,
+    })
+  end
+end
+
 ---@class __gui-editor__.runner
 return {
   activate_runner = activate_runner,
+  add_search_term = add_search_term,
+  remove_search_term = remove_search_term,
+  init_player = init_player,
 }

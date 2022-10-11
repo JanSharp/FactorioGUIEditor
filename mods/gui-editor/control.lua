@@ -112,6 +112,7 @@ local function init_player(player)
 
   window_manager.init_player(player_data)
   script_text_box.init_player(player_data)
+  runner.init_player(player_data)
 
   inspector.create_inspector(player_data)
   -- create hierarchy last for it to be the first front and active window

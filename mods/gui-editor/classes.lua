@@ -28,6 +28,7 @@ global = {}
 ---@field next_node_id integer
 ---@field stb_states_by_id table<integer, ScriptTextBoxState>
 ---@field next_stb_id integer
+---@field runner_search_terms table<string, RunnerListEntry>
 
 ---@alias EditorType
 ---| "missing"
