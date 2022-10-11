@@ -142,7 +142,7 @@ window_manager.register_window{
   minimal_size = {width = 200, height = 200},
 
   ---@param window_state WindowState
-  on_create = function(window_state)
+  on_created = function(window_state)
     local _, inner = gui.create_elem(window_state.frame_elem, {
       type = "frame",
       style = "inside_shallow_frame_with_padding",

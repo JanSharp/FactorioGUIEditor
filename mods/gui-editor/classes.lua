@@ -48,10 +48,10 @@ global = {}
 ---@class Window
 ---@field window_type WindowType @ unique identifier
 ---@field initial_title string
----@field on_create fun(window_state: WindowState)?
+---@field on_created fun(window_state: WindowState)?
 ---@field on_location_and_size_applied fun(window_state: WindowState)?
 ---@field on_pre_close (fun(window_state: WindowState):boolean?)? @ return `true` to cancel closing
----@field on_close fun(window_state: WindowState)?
+---@field on_closed fun(window_state: WindowState)?
 ---@field initial_size Size
 ---@field minimal_size Size
 

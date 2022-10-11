@@ -185,7 +185,7 @@ window_manager.register_window{
   minimal_size = {width = 100, height = 100},
 
   ---@param window_state WindowState
-  on_create = function(window_state)
+  on_created = function(window_state)
     local _, inspector_inner = gui.create_elem(window_state.frame_elem, {
       type = "frame",
       direction = "vertical",
@@ -219,7 +219,7 @@ window_manager.register_window{
   end,
 
   ---@param window_state WindowState
-  on_close = function(window_state)
+  on_closed = function(window_state)
     cleanup_stb_states(window_state.player)
   end,
 }

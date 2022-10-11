@@ -259,7 +259,7 @@ window_manager.register_window{
   minimal_size = {width = 250, height = 100},
 
   ---@param window_state WindowState
-  on_create = function(window_state)
+  on_created = function(window_state)
     local _, hierarchy_inner = gui.create_elem(window_state.frame_elem, {
       type = "frame",
       direction = "vertical",

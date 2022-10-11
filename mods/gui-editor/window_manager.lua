@@ -610,8 +610,8 @@ local function close_window_internal(window_state)
   end
   window_state.frame_elem.destroy()
 
-  if window.on_close then
-    window.on_close(window_state)
+  if window.on_closed then
+    window.on_closed(window_state)
   end
   return true
 end
@@ -873,8 +873,8 @@ local function create_window(player, window_type, parent_window)
   ll.append(player.window_list, window_state)
   bring_to_front(window_state)
 
-  if window.on_create then
-    window.on_create(window_state)
+  if window.on_created then
+    window.on_created(window_state)
   end
 
   return window_state
