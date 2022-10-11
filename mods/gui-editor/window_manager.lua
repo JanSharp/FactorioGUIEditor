@@ -831,15 +831,17 @@ local function on_gui_click(event)
   -- will be moved to the front and and all invisible frames stay on top
   local player = util.get_player(event)
   if not player then return end
-  local root = player.player.gui.screen
-  local main_frame = event.element
-  local parent = main_frame.parent
-  ---@cast parent -nil
-  while parent ~= root do
-    main_frame = parent
-    parent = parent.parent
+  local main_elem = event.element
+  local parent = main_elem.parent
+  -- just in case there is some way for the root LuaGuiElements to be clickable
+  if not parent then return end
+  local grand_parent = parent.parent
+  while grand_parent do
+    main_elem = parent
+    parent = grand_parent
+    grand_parent = grand_parent.parent
   end
-  local tags = gui.try_get_tags(main_frame)
+  local tags = gui.try_get_tags(main_elem)
   if not tags or not tags.window_id then return end
   local window_state = player.windows_by_id[tags.window_id]
   bring_to_front(window_state)
