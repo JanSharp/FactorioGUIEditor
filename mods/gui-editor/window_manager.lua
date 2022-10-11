@@ -540,12 +540,7 @@ local function close_window_internal(window_state)
   end
   ll.remove(window_state.player.window_list, window_state)
   local windows_by_type = window_state.player.windows_by_type[window_state.window_type]
-  for i = 1, #windows_by_type do
-    if windows_by_type[i] == window_state then
-      table.remove(windows_by_type, i)
-      break
-    end
-  end
+  util.remove_from_array(windows_by_type, window_state)
   window_state.player.windows_by_id[window_state.id] = nil
 
   if window_state.resizing then

@@ -67,6 +67,18 @@ local function clear_table(t)
   return t
 end
 
+---@generic T
+---@param array T[]
+---@param element T
+local function remove_from_array(array, element)
+  for i = 1, #array do
+    if array[i] == element then
+      table.remove(array, i)
+      break
+    end
+  end
+end
+
 -- numbers used to order these fields first in order
 local fields_for_all_classes = {
   ["type"] = -7,
@@ -202,4 +214,5 @@ return {
   get_player = get_player,
   invert = invert,
   clear_table = clear_table,
+  remove_from_array = remove_from_array,
 }
