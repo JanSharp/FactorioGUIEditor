@@ -38,14 +38,19 @@ local function position_invisible_frames(window_state)
   local location = window_state.location
   local size = window_state.size
   local scale = window_state.player.display_scale
-  local offset = 10 * scale
+  local offset = math.floor(10 * scale)
+  -- as described in `apply_location_and_size_changes_internal`, there are some widths and heights
+  -- that we cannot represent at scales > 1, so we are adding 1 pixel for both width and height
+  -- because 1 pixel overlap is better than 1 pixel gap
+  local scaled_width = math.ceil(size.width / scale) + 1
+  local scaled_height = math.ceil(size.height / scale) + 1
 
   window_state.movement_frame.location = {
     x = location.x + offset,
     y = location.y + offset,
   }
   window_state.movement_frame.style.size = {
-    size.width / scale - 20 - (24 + 4) * 2,
+    scaled_width - 20 - (24 + 4) * 2,
     28,
   }
 
@@ -70,25 +75,25 @@ local function position_invisible_frames(window_state)
     x = location.x + offset,
     y = location.y - offset,
   }
-  window_state.top_resize_frame.style.width = size.width / scale - 20
+  window_state.top_resize_frame.style.width = scaled_width - 20
 
   window_state.left_resize_frame.location = {
     x = location.x - offset,
     y = location.y + offset,
   }
-  window_state.left_resize_frame.style.height = size.height / scale - 20
+  window_state.left_resize_frame.style.height = scaled_height - 20
 
   window_state.bottom_resize_frame.location = {
     x = location.x + offset,
     y = location.y + size.height - offset,
   }
-  window_state.bottom_resize_frame.style.width = size.width / scale - 20
+  window_state.bottom_resize_frame.style.width = scaled_width - 20
 
   window_state.right_resize_frame.location = {
     x = location.x + size.width - offset,
     y = location.y + offset,
   }
-  window_state.right_resize_frame.style.height = size.height / scale - 20
+  window_state.right_resize_frame.style.height = scaled_height - 20
 end
 
 ---@enum WindowDirection
@@ -571,8 +576,8 @@ local on_resize_frame_location_changed = gui.register_handler(
   function(player, tags, event)
     local window_state = player.windows_by_id[tags.window_id]
     local elem_location = event.element.location ---@cast elem_location -nil
-    -- + 0.5 and then a floor to make it round instead of truncating
-    local offset = math.floor(10 * player.display_scale + 0.5)
+    -- matching the math in `position_invisible_frames`
+    local offset = math.floor(10 * player.display_scale)
 
     if tags.movement then
       set_location(window_state, {
