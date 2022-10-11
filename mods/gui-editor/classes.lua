@@ -13,6 +13,7 @@ global = {}
 ---@field windows_by_type table<WindowType, WindowState[]>
 ---@field windows_by_id table<integer, WindowState>
 ---@field next_window_id integer
+---@field windows_by_title table<string, {size: integer, window_states: table<integer, WindowState>}> @ title => window_id => window_state
 ---@field resolution DisplayResolution
 ---@field display_scale number
 ---@field main_node MainNode
@@ -45,7 +46,7 @@ global = {}
 
 ---@class Window
 ---@field window_type WindowType @ unique identifier
----@field title string @ display name/title
+---@field initial_title string
 ---@field on_create fun(window_state: WindowState)?
 ---@field on_location_and_size_applied fun(window_state: WindowState)?
 ---@field on_pre_close (fun(window_state: WindowState):boolean?)? @ return `true` to cancel closing
@@ -59,6 +60,8 @@ global = {}
 ---@field id integer
 ---@field frame_elem LuaGuiElement
 ---@field title_label LuaGuiElement
+---@field title string
+---@field display_title string
 ---@field header_elem LuaGuiElement
 ---@field draggable_space LuaGuiElement
 ---@field resize_button LuaGuiElement

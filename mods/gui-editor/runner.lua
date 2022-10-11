@@ -155,7 +155,7 @@ local on_runner_search_field_confirmed = gui.register_handler(
 
 window_manager.register_window{
   window_type = "runner",
-  title = "Runner",
+  initial_title = "Runner",
   initial_size = {width = 300, height = 500},
   minimal_size = {width = 200, height = 200},
 

@@ -506,6 +506,67 @@ local function bring_to_front(window_state)
 end
 
 ---@param window_state WindowState
+---@param display_title string
+local function set_display_title(window_state, display_title)
+  if window_state.display_title == display_title then return end
+  window_state.display_title = display_title
+  window_state.title_label.caption = display_title
+end
+
+---@param window_states WindowState
+---@param title string
+local function update_all_display_titles_for_list(window_states, title)
+  local i = 1
+  for _, other_window in pairs(window_states) do
+    set_display_title(other_window, title.." ("..i..")")
+    i = i + 1
+  end
+end
+
+---@param window_state WindowState
+local function remove_from_windows_by_title(window_state)
+  local windows_by_title = window_state.player.windows_by_title
+  local title = window_state.title
+  local window_states_list = windows_by_title[title]
+  window_states_list.size = window_states_list.size - 1
+  if window_states_list.size == 0 then
+    windows_by_title[title] = nil
+    return
+  end
+  window_states_list.window_states[window_state.id] = nil
+  if window_states_list.size == 1 then
+    local _, last_window_state = next(window_states_list.window_states)
+    set_display_title(last_window_state, title)
+    return
+  end
+  update_all_display_titles_for_list(window_states_list.window_states, title)
+end
+
+---@param window_state WindowState
+local function add_to_windows_by_title(window_state)
+  local windows_by_title = window_state.player.windows_by_title
+  local title = window_state.title
+  local window_states_list = windows_by_title[title]
+  if not window_states_list then
+    windows_by_title[title] = {size = 1, window_states = {[window_state.id] = window_state}}
+    set_display_title(window_state, title)
+    return
+  end
+  window_states_list.size = window_states_list.size + 1
+  window_states_list.window_states[window_state.id] = window_state
+  update_all_display_titles_for_list(window_states_list.window_states, title)
+end
+
+---@param window_state WindowState
+---@param title string
+local function set_title(window_state, title)
+  if window_state.title == title then return end
+  remove_from_windows_by_title(window_state)
+  window_state.title = title
+  add_to_windows_by_title(window_state)
+end
+
+---@param window_state WindowState
 local function destroy_invisible_frames(window_state)
   window_state.movement_frame.destroy()
   window_state.left_resize_frame.destroy()
@@ -542,6 +603,7 @@ local function close_window_internal(window_state)
   local windows_by_type = window_state.player.windows_by_type[window_state.window_type]
   util.remove_from_array(windows_by_type, window_state)
   window_state.player.windows_by_id[window_state.id] = nil
+  remove_from_windows_by_title(window_state)
 
   if window_state.resizing then
     destroy_invisible_frames(window_state)
@@ -733,7 +795,6 @@ local function create_window(player, window_type, parent_window)
             type = "label",
             name = "title_label",
             style = "frame_title",
-            caption = window.title,
           },
           {
             type = "empty-widget",
@@ -779,6 +840,7 @@ local function create_window(player, window_type, parent_window)
     frame_elem = frame,
     header_elem = inner.header_flow,
     title_label = inner.title_label,
+    title = window.initial_title,
     draggable_space = inner.draggable_space,
     resize_button = inner.resize_button,
     resizing = false,
@@ -795,6 +857,7 @@ local function create_window(player, window_type, parent_window)
     child_windows = ll.new_list(false, "sibling"),
   }
 
+  add_to_windows_by_title(window_state)
   set_size(window_state, window.initial_size, anchors.top_left)
   apply_location_and_size_changes_internal(window_state)
 
@@ -958,6 +1021,7 @@ local function init_player(player)
   player.next_window_id = 5
   player.resolution = player.player.display_resolution
   player.display_scale = player.player.display_scale
+  player.windows_by_title = {}
   update_screen_edge_windows(player)
 end
 
@@ -998,6 +1062,7 @@ return {
   bring_to_front = bring_to_front,
   close_window = close_window,
   set_resizing = set_resizing,
+  set_title = set_title,
   create_window = create_window,
   on_gui_click = on_gui_click,
   on_player_display_resolution_changed = on_player_display_resolution_changed,
