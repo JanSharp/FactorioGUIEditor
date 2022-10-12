@@ -3,6 +3,18 @@ local gui = require("__gui-editor__.gui")
 local util = require("__gui-editor__.util")
 local ll = require("__gui-editor__.linked_list")
 
+-- TODO: add functions for centering horizontally and vertically
+-- NOTE: maybe add quite a few functions for window resizing and movement, like move to a side [...]
+-- of the screen (all 4), move to corner, snap (move and or resize) to window/screen edge in a
+-- direction
+-- TODO: make windows always draggable
+-- TODO: add logic to restore window order (bring to front) and test if it can be used in on_load
+-- TODO: use flags and safe old values for maximizing horizontally and vertically
+-- TODO: change snapping to go through windows from front to back instead of in creation order
+-- NOTE: snapping logic currently snaps to window edges that are covered by other windows in front [...]
+-- changing this isn't exactly straight forward however, and it's not a big deal. But still worth a note
+-- TODO: add lock button to toggle resizing, so have a separate maximize button
+
 ---@type table<string, Window>
 local windows = {}
 

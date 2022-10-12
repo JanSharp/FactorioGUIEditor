@@ -817,6 +817,11 @@ local function create(player, parent_elem, params)
   --       text-box (calculated width, calculated min width)
   --       label (calculated width, calculated min width)
 
+  -- TODO: change to vertical flow and allow horizontally_stretchable
+  -- NOTE: to support vertically_stretchable try adding an empty widget at the bottom which when [...]
+  -- clicked `focus()`es the text box. It would be better if `select()` allows moving the cursor
+  -- to the end of the text box, which I assume it does, so yea do that instead of `focus()`
+
   local frame, inner = gui.create_elem(parent_elem, {
     type = "frame",
     style = "deep_frame_in_shallow_frame",

@@ -64,6 +64,7 @@ end
 ---@param window_state WindowState
 ---@param entry RunnerListEntry
 local function create_list_entry_button(window_state, entry)
+  -- TODO: add an invisible textfield for tab and shift tab to select entries
   entry.button = gui.create_elem(window_state.list_flow, {
     type = "button",
     caption = entry.display_text,
