@@ -68,6 +68,17 @@ local function clear_table(t)
 end
 
 ---@generic T
+---@param t T
+---@return T
+local function shallow_copy(t)
+  local result = {}
+  for k, v in pairs(t) do
+    result[k] = v
+  end
+  return setmetatable(result, getmetatable(t))
+end
+
+---@generic T
 ---@param array T[]
 ---@param element T
 local function remove_from_array(array, element)
@@ -213,6 +224,7 @@ return {
   all_used_fields = all_used_fields,
   get_player = get_player,
   invert = invert,
+  shallow_copy = shallow_copy,
   clear_table = clear_table,
   remove_from_array = remove_from_array,
 }

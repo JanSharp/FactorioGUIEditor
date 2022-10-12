@@ -4,7 +4,7 @@
 -- a window where you enter some text and it searches for commands, open windows, applications, etc
 
 ---cSpell:ignore lualib
-local factorio_util = require("__core__.lualib.util")
+local util = require("__gui-editor__.util")
 local gui = require("__gui-editor__.gui")
 local window_manager = require("__gui-editor__.window_manager")
 
@@ -14,6 +14,9 @@ local function perform_action_for_entry(window_state, entry)
   (({
     ["create_window"] = function()
       window_manager.create_window(window_state.player, entry.window_type)
+    end,
+    ["focus_window"] = function()
+      window_manager.bring_to_front(entry.window_state_to_focus)
     end,
   })[entry.entry_type] or function()
     error("Unknown entry type '"..entry.entry_type.."'.")
@@ -25,8 +28,8 @@ local on_runner_list_entry_click = gui.register_handler(
   ---@param event EventData.on_gui_click
   function(player, tags, event)
     local window_state = window_manager.get_window(player, tags.window_id)
-    perform_action_for_entry(window_state, window_state.shown_entries[tags.entry_index])
     window_manager.close_window(window_state)
+    perform_action_for_entry(window_state, window_state.shown_entries[tags.entry_index])
   end
 )
 
@@ -50,6 +53,9 @@ local function get_display_text(entry)
     ["create_window"] = function()
       return "New "..capitalize_words(entry.window_type)
     end,
+    ["focus_window"] = function()
+      return "Focus "..entry.window_state_to_focus.display_title
+    end,
   })[entry.entry_type] or function()
     error("Not implemented entry type '"..entry.entry_type.."'.")
   end)()
@@ -60,7 +66,7 @@ end
 local function create_list_entry_button(window_state, entry)
   entry.button = gui.create_elem(window_state.list_flow, {
     type = "button",
-    caption = get_display_text(entry),
+    caption = entry.display_text,
     style = "list_box_item",
     style_mods = {
       horizontally_stretchable = true,
@@ -99,10 +105,10 @@ local function update_list(window_state)
     end
   end
 
+  ---@param window_type_list RunnerListEntry[]
   local function create_entries(window_type_list)
     for _, entry_base in pairs(window_type_list) do
-      ---@type RunnerListEntry
-      local entry = factorio_util.copy(entry_base)
+      local entry = util.shallow_copy(entry_base)
       entry.index = i
       shown_entries[i] = entry
       i = i + 1
@@ -130,8 +136,8 @@ local on_runner_search_field_confirmed = gui.register_handler(
     local window_state = window_manager.get_window(player, tags.window_id)
     local entry = window_state.shown_entries[1]
     if not entry then return end
-    perform_action_for_entry(window_state, entry)
     window_manager.close_window(window_state)
+    perform_action_for_entry(window_state, entry)
   end
 )
 
@@ -238,18 +244,24 @@ table.sort(window_types)
 
 ---@param player PlayerData
 ---@param entry RunnerListEntry
-local function add_search_term(player, entry)
-  local key = get_display_text(entry):lower()
-  if player.runner_search_terms[key] then
-    error("Attempt to add search term '"..key.."' twice.")
+---@param allow_overwrite boolean?
+local function add_search_term(player, entry, allow_overwrite)
+  local display_text = get_display_text(entry)
+  local key = display_text:lower()
+  if not allow_overwrite and player.runner_search_terms[key] then
+    error("Attempt to add search term '"..display_text.."' twice.")
   end
+  entry.display_text = display_text
   player.runner_search_terms[key] = entry
 end
 
 ---@param player PlayerData
 ---@param entry RunnerListEntry
 local function remove_search_term(player, entry)
-  player.runner_search_terms[get_display_text(entry):lower()] = nil
+  local key = entry.display_text:lower()
+  if player.runner_search_terms[key] == entry then
+    player.runner_search_terms[key] = nil
+  end
 end
 
 ---@param player PlayerData
@@ -262,6 +274,38 @@ local function init_player(player)
     })
   end
 end
+
+---@param player PlayerData
+local function update_list_if_there_is_a_runner(player)
+  local windows = window_manager.get_windows(player, "runner")
+  if windows[1] then
+    update_list(windows[1])
+  end
+end
+
+window_manager.on_window_created(function(window_state)
+  if window_state.window_type == "runner" then return end
+  local entry = {
+    entry_type = "focus_window",
+    window_state_to_focus = window_state,
+  }
+  window_state.runner_search_entry = entry
+  add_search_term(window_state.player, entry)
+  update_list_if_there_is_a_runner(window_state.player)
+end)
+
+window_manager.on_window_closed(function(window_state)
+  if window_state.window_type == "runner" then return end
+  remove_search_term(window_state.player, window_state.runner_search_entry)
+  update_list_if_there_is_a_runner(window_state.player)
+end)
+
+window_manager.on_display_title_changed(function(window_state)
+  if window_state.window_type == "runner" then return end
+  remove_search_term(window_state.player, window_state.runner_search_entry)
+  add_search_term(window_state.player, window_state.runner_search_entry, true)
+  update_list_if_there_is_a_runner(window_state.player)
+end)
 
 ---@class __gui-editor__.runner
 return {

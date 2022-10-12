@@ -101,6 +101,9 @@ global = {}
 ---@field list_flow LuaGuiElement
 ---@field shown_entries RunnerListEntry[]
 ---
+---for every window but only used by the runner
+---@field runner_search_entry RunnerListEntry @ the runner itself doesn't have an entry
+---
 ---@field prev_sibling WindowState? @ in front of this window. for `child_windows`
 ---@field next_sibling WindowState? @ behind this window. for `child_windows`
 ---@field prev WindowState? @ in front of this window. for `window_list`
@@ -112,12 +115,15 @@ global = {}
 
 ---@alias RunnerListEntryType
 ---| "create_window"
+---| "focus_window"
 
 ---@class RunnerListEntry
 ---@field button LuaGuiElement
 ---@field index integer @ index in `shown_entries`
 ---@field entry_type RunnerListEntryType
+---@field display_text string
 ---@field window_type WindowType @ for type "create_window"
+---@field window_state_to_focus WindowState @ for type "focus_window"
 
 ---@class ScriptTextBoxState
 ---@field stb_id integer
