@@ -13,6 +13,7 @@ local function restart()
   do_restart = true
 end
 
+---@param event EventData.on_tick
 local function on_tick(event)
   if event.tick == global.restart_tick then
     if do_restart then
