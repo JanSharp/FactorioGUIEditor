@@ -145,6 +145,10 @@ script.on_event(defines.events.on_player_created, function(event)
   local player = game.get_player(event.player_index)
   ---@cast player -nil
   init_player(player)
+  -- NOTE: to work with the JanSharpDevEnv scenarios for now
+  if not game.is_multiplayer() then
+    game.tick_paused = false
+  end
 end)
 
 script.on_event(defines.events.on_player_removed, function(event)
@@ -156,7 +160,6 @@ script.on_init(function()
   for _, player in pairs(game.players) do
     init_player(player)
   end
-  game.tick_paused = true
 end)
 
 script.on_load(function()
@@ -173,9 +176,13 @@ script.on_load(function()
     end
     walk_node(player_data.main_node)
   end
+  window_manager.on_load()
 end)
 
-script.on_event(defines.events.on_tick, restart_manager.on_tick)
+script.on_event(defines.events.on_tick, function(event)
+  restart_manager.on_tick(event)
+  window_manager.on_tick(event)
+end)
 
 gui.register_for_all_gui_events()
 

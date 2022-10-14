@@ -8,7 +8,6 @@ local ll = require("__gui-editor__.linked_list")
 -- of the screen (all 4), move to corner, snap (move and or resize) to window/screen edge in a
 -- direction
 -- TODO: make windows always draggable
--- TODO: add logic to restore window order (bring to front) and test if it can be used in on_load
 -- TODO: use flags and safe old values for maximizing horizontally and vertically
 -- TODO: change snapping to go through windows from front to back instead of in creation order
 -- NOTE: snapping logic currently snaps to window edges that are covered by other windows in front [...]
@@ -528,6 +527,22 @@ local function apply_location_and_size_changes(window_state)
 end
 
 ---@param window_state WindowState
+local function bring_elems_to_front(window_state)
+  window_state.frame_elem.bring_to_front()
+  if window_state.resizing then
+    window_state.movement_frame.bring_to_front()
+    window_state.left_resize_frame.bring_to_front()
+    window_state.right_resize_frame.bring_to_front()
+    window_state.top_resize_frame.bring_to_front()
+    window_state.bottom_resize_frame.bring_to_front()
+    window_state.top_left_resize_frame.bring_to_front()
+    window_state.top_right_resize_frame.bring_to_front()
+    window_state.bottom_left_resize_frame.bring_to_front()
+    window_state.bottom_right_resize_frame.bring_to_front()
+  end
+end
+
+---@param window_state WindowState
 local function bring_to_front(window_state)
   local window_list = window_state.player.window_list
   if window_list.first ~= window_state then
@@ -541,22 +556,20 @@ local function bring_to_front(window_state)
   end
   -- NOTE: hardcoded heading_font_color, because setting to nil appears to simply get ignored
   window_state.title_label.style.font_color = {255, 230, 192}
-  window_state.frame_elem.bring_to_front()
-  if window_state.resizing then
-    window_state.movement_frame.bring_to_front()
-    window_state.left_resize_frame.bring_to_front()
-    window_state.right_resize_frame.bring_to_front()
-    window_state.top_resize_frame.bring_to_front()
-    window_state.bottom_resize_frame.bring_to_front()
-    window_state.top_left_resize_frame.bring_to_front()
-    window_state.top_right_resize_frame.bring_to_front()
-    window_state.bottom_left_resize_frame.bring_to_front()
-    window_state.bottom_right_resize_frame.bring_to_front()
-  end
+  bring_elems_to_front(window_state)
   local child_window = window_state.child_windows.last
   while child_window do
     bring_to_front(child_window)
     child_window = child_window.prev_sibling
+  end
+end
+
+---@param player PlayerData
+local function restore_back_to_front(player)
+  local window_state = player.window_list.last
+  while window_state do
+    bring_elems_to_front(window_state)
+    window_state = window_state.prev
   end
 end
 
@@ -1061,6 +1074,27 @@ local function on_player_display_scale_changed(event)
   end
 end
 
+local just_loaded_save = false
+local loading_one_tick_delay = true
+
+---@param event EventData.on_tick
+local function on_tick(event)
+  if just_loaded_save then
+    if loading_one_tick_delay then
+      loading_one_tick_delay = false
+    else
+      just_loaded_save = false
+      for _, player in pairs(global.players) do
+        restore_back_to_front(player)
+      end
+    end
+  end
+end
+
+local function on_load()
+  just_loaded_save = true
+end
+
 ---@param player PlayerData
 local function init_player(player)
   ---@param window_id integer
@@ -1132,5 +1166,7 @@ return {
   on_gui_click = on_gui_click,
   on_player_display_resolution_changed = on_player_display_resolution_changed,
   on_player_display_scale_changed = on_player_display_scale_changed,
+  on_tick = on_tick,
+  on_load = on_load,
   init_player = init_player,
 }
