@@ -145,10 +145,6 @@ script.on_event(defines.events.on_player_created, function(event)
   local player = game.get_player(event.player_index)
   ---@cast player -nil
   init_player(player)
-  -- NOTE: to work with the JanSharpDevEnv scenarios for now
-  if not game.is_multiplayer() then
-    game.tick_paused = false
-  end
 end)
 
 script.on_event(defines.events.on_player_removed, function(event)

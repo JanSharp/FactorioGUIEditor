@@ -10,8 +10,8 @@
       "name": "Factorio Mod Debug",
       "factorioArgs": [
         // "--load-scenario", "base/freeplay",
-        // "--load-scenario", "JanSharpDevEnv/Base",
-        "--load-scenario", "JanSharpDevEnv/NoBase",
+        // "--load-scenario", "gui-editor/gui-editor",
+        "--load-scenario", "gui-editor/gui-editor-no-base",
         "--window-size", "1280x720",
         // "--disable-prototype-history",
         // "--load-game", "_autosave-gui-editor",
@@ -22,7 +22,6 @@
       "adjustMods": {
         // "base": true,
         "minimal-no-base-mod": true,
-        "JanSharpDevEnv": true,
         "gui-editor": true,
         "phobos": true,
       },
