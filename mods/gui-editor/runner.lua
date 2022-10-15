@@ -80,6 +80,24 @@ local function create_list_entry_button(window_state, entry)
   })
 end
 
+---@param pattern string
+local function escape_lua_pattern(pattern)
+  return pattern:gsub("[%^%$%(%)%%%.%[%]%*%+%-%?]", {
+    ["^"] = "%^",
+    ["$"] = "%$",
+    ["("] = "%(",
+    [")"] = "%)",
+    ["%"] = "%%",
+    ["."] = "%.",
+    ["["] = "%[",
+    ["]"] = "%]",
+    ["*"] = "%*",
+    ["+"] = "%+",
+    ["-"] = "%-",
+    ["?"] = "%?",
+  })
+end
+
 ---@param window_state WindowState
 local function update_list(window_state)
   local shown_entries = window_state.shown_entries
@@ -94,8 +112,7 @@ local function update_list(window_state)
   local word_start_matches = {}
   local other_matches = {}
 
-  -- TODO: escape input string so it's not a pattern
-  local query = window_state.search_field.text:lower()
+  local query = escape_lua_pattern(window_state.search_field.text):lower()
   for term, entry_base in pairs(window_state.player.runner_search_terms) do
     if term:find("^"..query) then
       text_start_matches[term] = entry_base
