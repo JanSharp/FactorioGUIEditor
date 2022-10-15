@@ -101,6 +101,22 @@ styles.gui_editor_script_textbox = {
   selection_background_color = {80, 80, 80},
 }
 
+styles.gui_editor_selection_textfield = {
+  type = "textbox_style",
+  parent = "textbox",
+  default_background = {},
+  -- active_background = {base = {position = {432, 152 - 4}, width = 1, height = 1}}, -- darker transparent yellow
+  -- active_background = {base = {position = {389, 49}, width = 1, height = 1}}, -- lighter transparent yellow
+  active_background = {base = {position = {200, 950}, width = 1, height = 1}}, -- very transparent white
+  -- active_background = {base = {position = {300, 950}, width = 1, height = 1}}, -- less transparent white
+  disabled_background = {},
+  selection_background_color = {0, 0, 0, 0},
+  font_color = {0, 0, 0, 0},
+  rich_text_setting = "disabled",
+  width = 0,
+  minimal_height = 0,
+}
+
 styles.gui_editor_selected_frame_action_button = {
   type = "button_style",
   parent = "frame_action_button",

@@ -23,9 +23,9 @@ local function perform_action_for_entry(window_state, entry)
   end)()
 end
 
-local on_runner_list_entry_click = gui.register_handler(
-  "on_runner_list_entry_click",
-  ---@param event EventData.on_gui_click
+local on_runner_list_entry_activated = gui.register_handler(
+  "on_runner_list_entry_activated",
+  ---@param event EventData.on_gui_click|EventData.on_gui_confirmed
   function(player, tags, event)
     local window_state = window_manager.get_window(player, tags.window_id)
     window_manager.close_window(window_state)
@@ -64,19 +64,40 @@ end
 ---@param window_state WindowState
 ---@param entry RunnerListEntry
 local function create_list_entry_button(window_state, entry)
-  -- TODO: add an invisible textfield for tab and shift tab to select entries
   entry.button = gui.create_elem(window_state.list_flow, {
-    type = "button",
-    caption = entry.display_text,
-    style = "list_box_item",
-    style_mods = {
-      horizontally_stretchable = true,
+    type = "flow",
+    direction = "vertical",
+    style_mods = {vertical_spacing = 0},
+    children = {
+      {
+        type = "button",
+        caption = entry.display_text,
+        style = "list_box_item",
+        style_mods = {
+          horizontally_stretchable = true,
+        },
+        tags = {
+          window_id = window_state.id,
+          entry_index = entry.index,
+        },
+        events = {[defines.events.on_gui_click] = on_runner_list_entry_activated},
+      },
+      {
+        type = "textfield",
+        style = "gui_editor_selection_textfield",
+        style_mods = {
+          top_margin = -28,
+          height = 28,
+          horizontally_stretchable = true,
+        },
+        ignored_by_interaction = true,
+        tags = {
+          window_id = window_state.id,
+          entry_index = entry.index,
+        },
+        events = {[defines.events.on_gui_confirmed] = on_runner_list_entry_activated},
+      },
     },
-    tags = {
-      window_id = window_state.id,
-      entry_index = entry.index,
-    },
-    events = {[defines.events.on_gui_click] = on_runner_list_entry_click},
   })
 end
 
