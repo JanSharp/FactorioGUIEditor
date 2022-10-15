@@ -838,6 +838,8 @@ local function set_ast(stb_state, ast, error_code_instances)
   end
 end
 
+-- TODO: perform all parsing logic in the script text box, including displaying errors
+
 local on_script_text_box_text_changed = gui.register_handler(
   "on_script_text_box_text_changed",
   ---@param event EventData.on_gui_text_changed
