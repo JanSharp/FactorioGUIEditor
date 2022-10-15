@@ -127,6 +127,8 @@ local function update_list(window_state)
     shown_entries[i] = nil
   end
 
+  -- TODO: refactor search algorithm
+
   local i = 1
 
   local text_start_matches = {}
