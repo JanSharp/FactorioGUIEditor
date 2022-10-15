@@ -66,7 +66,7 @@ local function create(editor_state)
       width = 0,
       minimal_width = 100,
       horizontally_stretchable = true,
-      font = "default-mono",
+      font = "fira-code",
     },
     tags = editor_util.get_tags(editor_state),
     events = {[defines.events.on_gui_text_changed] = on_text_changed},

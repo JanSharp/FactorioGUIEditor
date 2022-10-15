@@ -668,9 +668,68 @@ local function count_lines(text)
   return line_count, longest_line, last_line_length
 end
 
--- font: default-mono, font size: 14
-local char_width = 8
-local char_height = 20
+local char_width
+local char_height
+do
+  local font_sizes = {
+    [10] = {
+      ["fira-code"] = {
+        char_width = 6,
+        char_height = 16,
+      },
+    },
+    [11] = {
+      ["fira-code"] = {
+        char_width = 7,
+        char_height = 16,
+      },
+    },
+    [12] = {
+      ["fira-code"] = {
+        char_width = 7,
+        char_height = 20,
+      },
+    },
+    [13] = {
+      ["fira-code"] = {
+        char_width = 8,
+        char_height = 20,
+      },
+    },
+    [14] = {
+      ["default-mono"] = {
+        char_width = 8,
+        char_height = 20,
+      },
+      ["fira-code"] = {
+        char_width = 9,
+        char_height = 20,
+      },
+    },
+    [15] = {
+      ["fira-code"] = {
+        char_width = 9,
+        char_height = 24,
+      },
+    },
+    [16] = {
+      ["fira-code"] = {
+        char_width = 10,
+        char_height = 24,
+      },
+    },
+    [17] = {
+      ["fira-code"] = {
+        char_width = 10,
+        char_height = 24,
+      },
+    },
+  }
+  local font_size = font_sizes[12]["fira-code"]
+  char_width = font_size.char_width
+  char_height = font_size.char_height
+end
+
 local tb_padding = 4
 local scroll_bar_size = 12
 
@@ -853,7 +912,7 @@ local function create(player, parent_elem, params)
                 name = "line_numbers_lb",
                 caption = "1",
                 style_mods = {
-                  font = "default-mono",
+                  font = "fira-code-medium",
                   left_margin = 4,
                   top_margin = 4,
                   single_line = false,
@@ -881,14 +940,11 @@ local function create(player, parent_elem, params)
                   padding = 4,
                   maximal_width = 0,
                   vertically_stretchable = true,
-                  font = "default-mono",
-                  ---cSpell:ignore FiraCode
-                  -- NOTE: the cursor also seems to be using the font_color, so it has to be non-invisible [...]
-                  -- there might be a way to abuse rich text, but the text boxes should have rich text disabled.
-                  -- so the other option is to keep the font_color white, but make it a "light" version of the
-                  -- font, or make the colored text box use a "bold" version of the font. But factorio doesn't
-                  -- ship with either of those versions for mono spaced fonts, so the gui editor would have to
-                  -- come with its own font. I'd probably just use FiraCode, because I'm familiar with it.
+                  font = "fira-code-light",
+                  -- the cursor also seems to be using the font_color, so it has to be visible [...]
+                  -- there might be a way to abuse rich text, but the text boxes should have rich
+                  -- text disabled. So instead use white font_color and make this textbox's font be
+                  -- lighter than the color label's font weight.
                   font_color = {1, 1, 1, 1},
                 },
                 tags = tags,
@@ -907,7 +963,7 @@ local function create(player, parent_elem, params)
                   padding = 4,
                   maximal_width = 0,
                   vertically_stretchable = true,
-                  font = "default-mono",
+                  font = "fira-code-medium",
                   single_line = false,
                 },
               },

@@ -1,0 +1,23 @@
+{
+  "language-name": "English",
+  "font": {
+    "fira-code-bold": [
+      "__gui-editor__/fonts/FiraCode-Bold.ttf"
+    ],
+    "fira-code-light": [
+      "__gui-editor__/fonts/FiraCode-Light.ttf"
+    ],
+    "fira-code-medium": [
+      "__gui-editor__/fonts/FiraCode-Medium.ttf"
+    ],
+    "fira-code-regular": [
+      "__gui-editor__/fonts/FiraCode-Regular.ttf"
+    ],
+    "fira-code-retina": [
+      "__gui-editor__/fonts/FiraCode-Retina.ttf"
+    ],
+    "fira-code-semibold": [
+      "__gui-editor__/fonts/FiraCode-SemiBold.ttf"
+    ]
+  }
+}

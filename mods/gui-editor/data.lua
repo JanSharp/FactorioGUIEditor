@@ -139,6 +139,11 @@ styles.gui_editor_list_box_scroll_pane = {
 -- to make the arrow tooltips for invisible resize frames look better
 styles.tooltip_label.minimal_width = 0
 
+local fira_code_font_size = 12
+-- oddly enough font size 14 with fira code puts the text pretty high up in each line which looks
+-- really weird with the cursor going so much farther down than the actual text
+-- default-mono is kind of similar, but not as extreme. Although I didn't test anything but 14
+
 data:extend{
   {
     type = "sprite",
@@ -176,6 +181,43 @@ data:extend{
     from = "default-mono",
     size = 14,
   },
+  -- {
+  --   type = "font",
+  --   name = "fira-code-bold",
+  --   from = "fira-code-bold",
+  --   size = fira_code_font_size,
+  -- },
+  {
+    type = "font",
+    name = "fira-code-light",
+    from = "fira-code-light",
+    size = fira_code_font_size,
+  },
+  {
+    type = "font",
+    name = "fira-code-medium",
+    from = "fira-code-medium",
+    size = fira_code_font_size,
+  },
+  {
+    type = "font",
+    name = "fira-code",
+    from = "fira-code-regular",
+    size = fira_code_font_size,
+  },
+  -- No idea what retina is supposed to mean, but it seems like a very slight variation of medium
+  -- {
+  --   type = "font",
+  --   name = "fira-code",
+  --   from = "fira-code-retina",
+  --   size = fira_code_font_size,
+  -- },
+  -- {
+  --   type = "font",
+  --   name = "fira-code-semibold",
+  --   from = "fira-code-semibold",
+  --   size = fira_code_font_size,
+  -- },
   {
     type = "custom-input",
     name = "gui-editor-open-runner",
