@@ -114,6 +114,8 @@ local function init_player(player)
   script_text_box.init_player(player_data)
   runner.init_player(player_data)
 
+  window_manager.enable_click_outside_of_window_detection(player_data)
+
   inspector.create_inspector(player_data)
   -- create hierarchy last for it to be the first front and active window
   hierarchy.create_hierarchy(player_data)

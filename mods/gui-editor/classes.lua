@@ -12,6 +12,7 @@ global = {}
 ---@field window_list WindowStateList @ windows in order by "in front"/"in back"
 ---outside of `window_manager` this is always `== window_list.first`, or `nil`
 ---@field focused_window WindowState?
+---@field empty_widget_covering_the_entire_screen LuaGuiElement?
 ---@field windows_by_type table<WindowType, WindowState[]>
 ---@field windows_by_id table<integer, WindowState>
 ---@field next_window_id integer

@@ -14,7 +14,7 @@ local ll = require("__gui-editor__.linked_list")
 -- changing this isn't exactly straight forward however, and it's not a big deal. But still worth a note
 -- TODO: add lock button to toggle resizing, so have a separate maximize button
 -- TODO: add options for custom buttons in the title bar
--- TODO: add invisible element covering the entire screen to detect mouse clicks outside of any window
+-- TODO: changing scale breaks invisible frames, right?
 
 ---@type table<string, Window>
 local windows = {}
@@ -561,22 +561,27 @@ local function bring_to_front_recursive(window_state)
   end
 end
 
+---@param player PlayerData
+local function lose_focus(player)
+  if player.focused_window and not player.focused_window.closed then
+    player.focused_window.title_label.style.font_color = {0.6, 0.6, 0.6}
+    local focused_window = windows[player.focused_window.window_type]
+    if focused_window.on_focus_lost then
+      focused_window.on_focus_lost(player.focused_window)
+    end
+  end
+  player.focused_window = nil
+end
+
 ---@param window_state WindowState
 ---@return boolean active_window_changed
 local function bring_to_front_internal(window_state)
   bring_to_front_recursive(window_state)
   local front_window = window_state.player.window_list.first ---@cast front_window -nil
-  local focused_window_state = window_state.player.focused_window
-  if front_window == focused_window_state then return false end
+  if front_window == window_state.player.focused_window then return false end
   -- NOTE: hardcoded heading_font_color, because setting to nil appears to simply get ignored
   front_window.title_label.style.font_color = {255, 230, 192}
-  if focused_window_state and not focused_window_state.closed then
-    focused_window_state.title_label.style.font_color = {0.6, 0.6, 0.6}
-    local focused_window = windows[focused_window_state.window_type]
-    if focused_window.on_focus_lost then
-      focused_window.on_focus_lost(focused_window_state)
-    end
-  end
+  lose_focus(window_state.player)
   window_state.player.focused_window = front_window
   return true
 end
@@ -1052,6 +1057,41 @@ local function ensure_valid(window_state)
   recreate_window(window_state)
 end
 
+---@param player PlayerData
+local function update_empty_widget_covering_the_entire_screen(player)
+  local elem = player.empty_widget_covering_the_entire_screen
+  if not elem then return end
+  local resolution = player.resolution
+  elem.style.size = {
+    width = resolution.width / player.display_scale,
+    height = resolution.height / player.display_scale,
+  }
+end
+
+local on_empty_widget_covering_the_entire_screen_click = gui.register_handler(
+  "on_empty_widget_covering_the_entire_screen_click",
+  ---@param event EventData.on_gui_click
+  function(player, tags, event)
+    lose_focus(player)
+  end
+)
+
+---@param player PlayerData
+local function enable_click_outside_of_window_detection(player)
+  if player.empty_widget_covering_the_entire_screen then return end
+  player.empty_widget_covering_the_entire_screen = gui.create_elem(player.player.gui.screen, {
+    type = "empty-widget",
+    events = {[defines.events.on_gui_click] = on_empty_widget_covering_the_entire_screen_click},
+  })
+  update_empty_widget_covering_the_entire_screen(player)
+end
+
+---@param player PlayerData
+local function disable_click_outside_of_window_detection(player)
+  if not player.empty_widget_covering_the_entire_screen then return end
+  player.empty_widget_covering_the_entire_screen.destroy()
+end
+
 ---@param event EventData.on_gui_click
 local function on_gui_click(event)
   -- this finds the frame that is inside gui.screen and gets the window_state
@@ -1099,6 +1139,7 @@ local function on_player_display_resolution_changed(event)
   local resolution = player.player.display_resolution
   player.resolution = resolution
   update_screen_edge_windows(player)
+  update_empty_widget_covering_the_entire_screen(player)
   for _, window_state in pairs(player.windows_by_id) do
     if not window_state.is_window_edge then
       -- stop all resizing because window scaling is handled differently
@@ -1157,6 +1198,7 @@ local function on_player_display_scale_changed(event)
   if not player then return end
   player.display_scale = player.player.display_scale
   update_screen_edge_windows(player)
+  update_empty_widget_covering_the_entire_screen(player)
   for _, window_state in pairs(player.windows_by_id) do
     if not window_state.is_window_edge then
       -- changing the scale affects the minimal_size, so we reapply width and height
@@ -1261,6 +1303,8 @@ return {
   set_title = set_title,
   create_window = create_window,
   ensure_valid = ensure_valid,
+  enable_click_outside_of_window_detection = enable_click_outside_of_window_detection,
+  disable_click_outside_of_window_detection = disable_click_outside_of_window_detection,
   on_gui_click = on_gui_click,
   on_player_display_resolution_changed = on_player_display_resolution_changed,
   on_player_display_scale_changed = on_player_display_scale_changed,
