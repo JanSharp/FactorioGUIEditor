@@ -14,7 +14,6 @@ local ll = require("__gui-editor__.linked_list")
 -- changing this isn't exactly straight forward however, and it's not a big deal. But still worth a note
 -- TODO: add lock button to toggle resizing, so have a separate maximize button
 -- TODO: add options for custom buttons in the title bar
--- TODO: changing scale breaks invisible frames, right?
 
 ---@type table<string, Window>
 local windows = {}
@@ -1201,8 +1200,7 @@ local function on_player_display_scale_changed(event)
   for _, window_state in pairs(player.windows_by_id) do
     if not window_state.is_window_edge then
       -- changing the scale affects the minimal_size, so we reapply width and height
-      set_width(window_state, window_state.size.width, anchors.top_left)
-      set_height(window_state, window_state.size.height, anchors.top_left)
+      set_size(window_state, window_state.size, anchors.top_left)
       -- and applying size to the gui element depends on scale regardless of size having changed
       apply_location_and_size_changes(window_state)
       if window_state.resizing then
