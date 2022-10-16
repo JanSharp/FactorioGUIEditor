@@ -7,7 +7,6 @@ local ll = require("__gui-editor__.linked_list")
 -- NOTE: maybe add quite a few functions for window resizing and movement, like move to a side [...]
 -- of the screen (all 4), move to corner, snap (move and or resize) to window/screen edge in a
 -- direction
--- TODO: make windows always draggable
 -- TODO: use flags and safe old values for maximizing horizontally and vertically
 -- NOTE: snapping logic currently snaps to window edges that are covered by other windows in front [...]
 -- changing this isn't exactly straight forward however, and it's not a big deal. But still worth a note
@@ -86,9 +85,7 @@ local function get_window(player, window_id)
 end
 
 ---@param window_state WindowState
-local function position_invisible_frames(window_state)
-  if not window_state.resizing then return end
-
+local function position_movement_frame(window_state)
   local location = window_state.location
   local size = window_state.size
   local scale = window_state.player.display_scale
@@ -97,7 +94,6 @@ local function position_invisible_frames(window_state)
   -- that we cannot represent at scales > 1, so we are adding 1 pixel for both width and height
   -- because 1 pixel overlap is better than 1 pixel gap
   local scaled_width = math.ceil(size.width / scale) + 1
-  local scaled_height = math.ceil(size.height / scale) + 1
 
   window_state.movement_frame.location = {
     x = location.x + offset,
@@ -107,6 +103,22 @@ local function position_invisible_frames(window_state)
     scaled_width - 20 - (24 + 4) * 2,
     28,
   }
+end
+
+---@param window_state WindowState
+local function position_resize_frames(window_state)
+  if not window_state.resizing then return end
+
+  -- copy paste from `position_movement_frame`, the only new one is `scaled_height`
+  local location = window_state.location
+  local size = window_state.size
+  local scale = window_state.player.display_scale
+  local offset = math.floor(10 * scale)
+  -- as described in `apply_location_and_size_changes_internal`, there are some widths and heights
+  -- that we cannot represent at scales > 1, so we are adding 1 pixel for both width and height
+  -- because 1 pixel overlap is better than 1 pixel gap
+  local scaled_width = math.ceil(size.width / scale) + 1
+  local scaled_height = math.ceil(size.height / scale) + 1
 
   window_state.top_left_resize_frame.location = {
     x = location.x - offset,
@@ -522,6 +534,10 @@ end
 ---@param window_state WindowState
 local function apply_location_and_size_changes(window_state)
   apply_location_and_size_changes_internal(window_state)
+  position_movement_frame(window_state)
+  if window_state.resizing then
+    position_resize_frames(window_state)
+  end
   local window = windows[window_state.window_type]
   if window.on_location_and_size_applied then
     window.on_location_and_size_applied(window_state)
@@ -531,8 +547,8 @@ end
 ---@param window_state WindowState
 local function bring_elems_to_front(window_state)
   window_state.frame_elem.bring_to_front()
+  window_state.movement_frame.bring_to_front()
   if window_state.resizing then
-    window_state.movement_frame.bring_to_front()
     window_state.left_resize_frame.bring_to_front()
     window_state.right_resize_frame.bring_to_front()
     window_state.top_resize_frame.bring_to_front()
@@ -671,8 +687,7 @@ local function set_title(window_state, title)
 end
 
 ---@param window_state WindowState
-local function destroy_invisible_frames(window_state)
-  window_state.movement_frame.destroy()
+local function destroy_resize_frames(window_state)
   window_state.left_resize_frame.destroy()
   window_state.right_resize_frame.destroy()
   window_state.top_resize_frame.destroy()
@@ -710,8 +725,9 @@ local function close_window_internal(window_state)
   remove_from_windows_by_title(window_state)
 
   if window_state.resizing then
-    destroy_invisible_frames(window_state)
+    destroy_resize_frames(window_state)
   end
+  window_state.movement_frame.destroy()
   window_state.frame_elem.destroy()
 
   if window.on_closed then
@@ -755,7 +771,6 @@ local on_resize_frame_location_changed = gui.register_handler(
       snap_resize(window_state, tags.direction)
     end
 
-    position_invisible_frames(window_state)
     apply_location_and_size_changes(window_state)
   end
 )
@@ -805,6 +820,12 @@ local function create_invisible_frame(window_state, direction, movement)
 end
 
 ---@param window_state WindowState
+local function create_movement_frame(window_state)
+  window_state.movement_frame = create_invisible_frame(window_state, directions.none, true)
+  position_movement_frame(window_state)
+end
+
+---@param window_state WindowState
 ---@param resizing boolean
 local function set_resizing(window_state, resizing)
   if window_state.resizing == resizing then return end
@@ -822,7 +843,6 @@ local function set_resizing(window_state, resizing)
 
   if resizing then
     local create = create_invisible_frame
-    window_state.movement_frame = create(window_state, directions.none, true)
     window_state.left_resize_frame = create(window_state, directions.left)
     window_state.right_resize_frame = create(window_state, directions.right)
     window_state.top_resize_frame = create(window_state, directions.top)
@@ -831,9 +851,9 @@ local function set_resizing(window_state, resizing)
     window_state.top_right_resize_frame = create(window_state, directions.top_right)
     window_state.bottom_left_resize_frame = create(window_state, directions.bottom_left)
     window_state.bottom_right_resize_frame = create(window_state, directions.bottom_right)
-    position_invisible_frames(window_state)
+    position_resize_frames(window_state)
   else
-    destroy_invisible_frames(window_state)
+    destroy_resize_frames(window_state)
   end
 end
 
@@ -850,12 +870,10 @@ local on_resize_button_click = gui.register_handler(
       if event.control then
         set_location_x(window_state, 0)
         set_width(window_state, window_state.player.resolution.width, anchors.top_left)
-        position_invisible_frames(window_state)
         apply_location_and_size_changes(window_state)
       else
         set_location_y(window_state, 0)
         set_height(window_state, window_state.player.resolution.height, anchors.top_left)
-        position_invisible_frames(window_state)
         apply_location_and_size_changes(window_state)
       end
     end
@@ -974,6 +992,7 @@ local function create_window(player, window_type, parent_window)
     child_windows = ll.new_list(false, "sibling"),
   }
   create_window_elements(window_state)
+  create_movement_frame(window_state)
 
   add_to_windows_by_title(window_state)
 
@@ -1005,6 +1024,7 @@ local function recreate_window(window_state)
   window_state.id = old_window_state.id
   window_state.title = old_window_state.title
   window_state.display_title = old_window_state.display_title
+  window_state.movement_frame = old_window_state.movement_frame
   window_state.resizing = false
   window_state.location = {x = 0, y = 0}
   window_state.location = util.shallow_copy(old_window_state.location)
@@ -1026,7 +1046,7 @@ local function recreate_window(window_state)
   window_state.title_label.caption = window_state.display_title
 
   if old_window_state.resizing then
-    destroy_invisible_frames(old_window_state)
+    destroy_resize_frames(old_window_state)
     set_resizing(window_state, true)
   end
 
@@ -1052,6 +1072,9 @@ end
 local function ensure_valid(window_state)
   if window_state.closed then
     error("Attempt to ensure a window_state is valid when it was already closed.")
+  end
+  if not window_state.movement_frame.valid then
+    create_movement_frame(window_state)
   end
   if window_state.frame_elem.valid then return end
   recreate_window(window_state)
@@ -1204,9 +1227,6 @@ local function on_player_display_scale_changed(event)
       set_size(window_state, window_state.size, anchors.top_left)
       -- and applying size to the gui element depends on scale regardless of size having changed
       apply_location_and_size_changes(window_state)
-      if window_state.resizing then
-        position_invisible_frames(window_state)
-      end
     end
   end
 end
@@ -1266,7 +1286,6 @@ return {
   register_window = register_window,
   get_windows = get_windows,
   get_window = get_window,
-  position_invisible_frames = position_invisible_frames,
   directions = directions,
   get_horizontal_direction_multiplier = get_horizontal_direction_multiplier,
   get_vertical_direction_multiplier = get_vertical_direction_multiplier,
