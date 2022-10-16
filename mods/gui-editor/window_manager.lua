@@ -9,7 +9,6 @@ local ll = require("__gui-editor__.linked_list")
 -- direction
 -- TODO: make windows always draggable
 -- TODO: use flags and safe old values for maximizing horizontally and vertically
--- TODO: change snapping to go through windows from front to back instead of in creation order
 -- NOTE: snapping logic currently snaps to window edges that are covered by other windows in front [...]
 -- changing this isn't exactly straight forward however, and it's not a big deal. But still worth a note
 -- TODO: add lock button to toggle resizing, so have a separate maximize button
@@ -412,7 +411,8 @@ local function snap_axis_internal(
       return true
     end
   end
-  for _, other in pairs(window_state.player.windows_by_id) do
+  local other = window_state.player.window_list.first
+  while other do
     if overlapping(window_state, other) then
       -- check if the other window's edge is touching - or close to - this window's opposite edge
       if try_snap_to(get_anchor_xy(other, anchor)) then return true end
@@ -423,6 +423,7 @@ local function snap_axis_internal(
       -- perform the same snapping logic as before, but this time with the same window side
       if try_snap_to(get_anchor_xy(other, opposite_anchor)) then return true end
     end
+    other = other.next
   end
   return false
 end
