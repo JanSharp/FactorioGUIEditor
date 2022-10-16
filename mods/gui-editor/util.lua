@@ -71,6 +71,7 @@ end
 ---@param t T
 ---@return T
 local function shallow_copy(t)
+  if not t then return nil end
   local result = {}
   for k, v in pairs(t) do
     result[k] = v

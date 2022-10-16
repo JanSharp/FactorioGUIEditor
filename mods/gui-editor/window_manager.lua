@@ -14,6 +14,7 @@ local ll = require("__gui-editor__.linked_list")
 -- changing this isn't exactly straight forward however, and it's not a big deal. But still worth a note
 -- TODO: add lock button to toggle resizing, so have a separate maximize button
 -- TODO: add options for custom buttons in the title bar
+-- TODO: add invisible element covering the entire screen to detect mouse clicks outside of any window
 
 ---@type table<string, Window>
 local windows = {}
@@ -544,24 +545,49 @@ local function bring_elems_to_front(window_state)
 end
 
 ---@param window_state WindowState
-local function bring_to_front(window_state)
+local function bring_to_front_recursive(window_state)
   local window_list = window_state.player.window_list
-  if window_list.first ~= window_state then
-    window_list.first.title_label.style.font_color = {0.6, 0.6, 0.6}
-  end
   ll.remove(window_list, window_state)
   ll.prepend(window_list, window_state)
   if window_state.parent_window then
     ll.remove(window_state.parent_window.child_windows, window_state)
     ll.prepend(window_state.parent_window.child_windows, window_state)
   end
-  -- NOTE: hardcoded heading_font_color, because setting to nil appears to simply get ignored
-  window_state.title_label.style.font_color = {255, 230, 192}
   bring_elems_to_front(window_state)
   local child_window = window_state.child_windows.last
   while child_window do
-    bring_to_front(child_window)
+    bring_to_front_recursive(child_window)
     child_window = child_window.prev_sibling
+  end
+end
+
+---@param window_state WindowState
+---@return boolean active_window_changed
+local function bring_to_front_internal(window_state)
+  bring_to_front_recursive(window_state)
+  local front_window = window_state.player.window_list.first ---@cast front_window -nil
+  local focused_window_state = window_state.player.focused_window
+  if front_window == focused_window_state then return false end
+  -- NOTE: hardcoded heading_font_color, because setting to nil appears to simply get ignored
+  front_window.title_label.style.font_color = {255, 230, 192}
+  if focused_window_state and not focused_window_state.closed then
+    focused_window_state.title_label.style.font_color = {0.6, 0.6, 0.6}
+    local focused_window = windows[focused_window_state.window_type]
+    if focused_window.on_focus_lost then
+      focused_window.on_focus_lost(focused_window_state)
+    end
+  end
+  window_state.player.focused_window = front_window
+  return true
+end
+
+---@param window_state WindowState
+local function bring_to_front(window_state)
+  if not bring_to_front_internal(window_state) then return end
+  local focused_window = window_state.player.focused_window ---@cast focused_window -nil
+  local window = windows[focused_window.window_type]
+  if window.on_focus_gained then
+    window.on_focus_gained(focused_window)
   end
 end
 
@@ -663,7 +689,7 @@ local function close_window_internal(window_state)
   local child_window = window_state.child_windows.first
   while child_window do
     if not close_window_internal(child_window) then
-      -- instantly return, child windows behind the window that didn't close also stay open
+      -- instantly return, parent windows behind the window that didn't close also stay open
       return false
     end
     child_window = child_window.next_sibling
@@ -687,6 +713,7 @@ local function close_window_internal(window_state)
     window.on_closed(window_state)
   end
   raise_on_window_closed(window_state)
+  window_state.closed = true
   return true
 end
 
@@ -838,19 +865,13 @@ local on_close_button_click = gui.register_handler(
   end
 )
 
----@param player PlayerData
----@param window_type WindowType
----@param parent_window WindowState?
-local function create_window(player, window_type, parent_window)
-  local window = windows[window_type]
-  local window_id = player.next_window_id
-  player.next_window_id = window_id + 1
-
-  local frame, inner = gui.create_elem(player.player.gui.screen, {
+---@param window_state WindowState
+local function create_window_elements(window_state)
+  local frame, inner = gui.create_elem(window_state.player.player.gui.screen, {
     type = "frame",
     direction = "vertical",
     -- needs the window_id for the generic "bring clicked window to the front" logic
-    tags = {window_id = window_id},
+    tags = {window_id = window_state.id},
     -- no event handler for on_location_changed because on location changed fires before
     -- the resolution and scale changing events. The resolution shrinking ends up
     -- moving the frames, which - if on location changed changed was registered - would
@@ -888,7 +909,7 @@ local function create_window(player, window_type, parent_window)
             sprite = "gui-editor-resize-white",
             hovered_sprite = "gui-editor-resize-black",
             clicked_sprite = "gui-editor-resize-black",
-            tags = {window_id = window_id},
+            tags = {window_id = window_state.id},
             events = {[defines.events.on_gui_click] = on_resize_button_click},
           },
           {
@@ -898,7 +919,7 @@ local function create_window(player, window_type, parent_window)
             sprite = "utility/close_white",
             hovered_sprite = "utility/close_black",
             clicked_sprite = "utility/close_black",
-            tags = {window_id = window_id},
+            tags = {window_id = window_state.id},
             events = {[defines.events.on_gui_click] = on_close_button_click},
           },
         },
@@ -906,22 +927,39 @@ local function create_window(player, window_type, parent_window)
     },
   })
 
+  window_state.frame_elem = frame
+  window_state.header_elem = inner.header_flow
+  window_state.title_label = inner.title_label
+  window_state.draggable_space = inner.draggable_space
+  window_state.resize_button = inner.resize_button
+
+  set_size(window_state, window_state.size, anchors.top_left)
+  apply_location_and_size_changes_internal(window_state)
+end
+
+---@param player PlayerData
+---@param window_type WindowType
+---@param parent_window WindowState?
+local function create_window(player, window_type, parent_window)
+  local window = windows[window_type]
+  local window_id = player.next_window_id
+  player.next_window_id = window_id + 1
   ---@type WindowState
   local window_state = {
     player = player,
     window_type = window_type,
     id = window_id,
-    frame_elem = frame,
-    header_elem = inner.header_flow,
-    title_label = inner.title_label,
+    -- frame_elem = frame,
+    -- header_elem = inner.header_flow,
+    -- title_label = inner.title_label,
     title = window.initial_title,
-    draggable_space = inner.draggable_space,
-    resize_button = inner.resize_button,
+    -- draggable_space = inner.draggable_space,
+    -- resize_button = inner.resize_button,
     resizing = false,
     location = {x = 0, y = 0},
-    size = { -- initialized using `set_size`
-      width = -1,
-      height = -1,
+    size = {
+      width = window.initial_size.width,
+      height = window.initial_size.height,
     },
     actual_size = { -- initialized using `apply_location_and_size_changes_internal`
       width = -1,
@@ -930,10 +968,9 @@ local function create_window(player, window_type, parent_window)
     parent_window = parent_window,
     child_windows = ll.new_list(false, "sibling"),
   }
+  create_window_elements(window_state)
 
   add_to_windows_by_title(window_state)
-  set_size(window_state, window.initial_size, anchors.top_left)
-  apply_location_and_size_changes_internal(window_state)
 
   if parent_window then
     ll.prepend(parent_window.child_windows, window_state)
@@ -945,15 +982,74 @@ local function create_window(player, window_type, parent_window)
   window_states[#window_states+1] = window_state
 
   ll.append(player.window_list, window_state)
-  bring_to_front(window_state)
+  bring_to_front_internal(window_state)
 
   if window.on_created then
     window.on_created(window_state)
   end
 
   raise_on_window_created(window_state)
+end
 
-  return window_state
+---@param window_state WindowState
+local function recreate_window(window_state)
+  local old_window_state = util.shallow_copy(window_state)
+  util.clear_table(window_state)
+  window_state.player = old_window_state.player
+  window_state.window_type = old_window_state.window_type
+  window_state.id = old_window_state.id
+  window_state.title = old_window_state.title
+  window_state.display_title = old_window_state.display_title
+  window_state.resizing = false
+  window_state.location = {x = 0, y = 0}
+  window_state.location = util.shallow_copy(old_window_state.location)
+  window_state.size = util.shallow_copy(old_window_state.size)
+  window_state.actual_size = util.shallow_copy(old_window_state.actual_size)
+  window_state.location_before_rescale = util.shallow_copy(old_window_state.location_before_rescale)
+  window_state.resolution_for_location_before_rescale
+    = util.shallow_copy(old_window_state.resolution_for_location_before_rescale)
+  window_state.size_before_rescale = util.shallow_copy(old_window_state.size_before_rescale)
+  window_state.resolution_for_size_before_rescale
+    = util.shallow_copy(old_window_state.resolution_for_size_before_rescale)
+  window_state.parent_window = old_window_state.parent_window
+  window_state.child_windows = old_window_state.child_windows
+  window_state.prev_sibling = old_window_state.prev_sibling
+  window_state.next_sibling = old_window_state.next_sibling
+  window_state.prev = old_window_state.prev
+  window_state.next = old_window_state.next
+  create_window_elements(window_state)
+  window_state.title_label.caption = window_state.display_title
+
+  if old_window_state.resizing then
+    destroy_invisible_frames(old_window_state)
+    set_resizing(window_state, true)
+  end
+
+  -- restore back to front after setting resizing because the invisible frames also have to be in
+  -- the correct "layer"
+  restore_back_to_front(window_state.player)
+
+  local window = windows[window_state.window_type]
+  if window.on_created then
+    window.on_created(window_state)
+  end
+  if window.on_recreated then
+    window.on_recreated(window_state, old_window_state)
+  end
+end
+
+---NOTE: `ensure_valid` is fully functional, but for it to really make sense basically every [...]
+---function in the window_manager would have to call `ensure_valid` before interacting with it,
+---and I really don't think that's worth it. Those other mods that destroy my windows without using
+---a remote interface (that I'm probably going to make, if this ever becomes its own mod) then
+---that's on them. #not_my_problem
+---@param window_state WindowState
+local function ensure_valid(window_state)
+  if window_state.closed then
+    error("Attempt to ensure a window_state is valid when it was already closed.")
+  end
+  if window_state.frame_elem.valid then return end
+  recreate_window(window_state)
 end
 
 ---@param event EventData.on_gui_click
@@ -1164,6 +1260,7 @@ return {
   set_resizing = set_resizing,
   set_title = set_title,
   create_window = create_window,
+  ensure_valid = ensure_valid,
   on_gui_click = on_gui_click,
   on_player_display_resolution_changed = on_player_display_resolution_changed,
   on_player_display_scale_changed = on_player_display_scale_changed,

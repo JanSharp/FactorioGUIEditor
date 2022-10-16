@@ -135,7 +135,7 @@ local function update_list(window_state)
   local word_start_matches = {}
   local other_matches = {}
 
-  local query = escape_lua_pattern(window_state.search_field.text):lower()
+  local query = escape_lua_pattern(window_state.query):lower()
   for term, entry_base in pairs(window_state.player.runner_search_terms) do
     if term:find("^"..query) then
       text_start_matches[term] = entry_base
@@ -166,7 +166,9 @@ local on_runner_search_field_text_changed = gui.register_handler(
   "on_runner_search_field_text_changed",
   ---@param event EventData.on_gui_text_changed
   function(player, tags, event)
-    update_list(window_manager.get_window(player, tags.window_id))
+    local window_state = window_manager.get_window(player, tags.window_id)
+    window_state.query = window_state.search_field.text
+    update_list(window_state)
   end
 )
 
@@ -260,8 +262,22 @@ window_manager.register_window{
     window_state.search_field = inner.search_field
     window_state.list_flow = inner.list_flow
     window_state.shown_entries = {}
+    window_state.query = ""
     update_list(window_state)
 
+    window_state.search_field.focus()
+  end,
+
+  ---@param window_state WindowState
+  ---@param old_window_state WindowState
+  on_recreated = function(window_state, old_window_state)
+    window_state.query = old_window_state.query
+    window_state.search_field.text = old_window_state.query
+    update_list(window_state)
+  end,
+
+  ---@param window_state WindowState
+  on_focus_gained = function(window_state)
     window_state.search_field.focus()
   end,
 }

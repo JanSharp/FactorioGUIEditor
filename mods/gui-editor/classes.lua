@@ -10,6 +10,8 @@ global = {}
 ---@field player LuaPlayer
 ---@field background_rendering uint64
 ---@field window_list WindowStateList @ windows in order by "in front"/"in back"
+---outside of `window_manager` this is always `== window_list.first`, or `nil`
+---@field focused_window WindowState?
 ---@field windows_by_type table<WindowType, WindowState[]>
 ---@field windows_by_id table<integer, WindowState>
 ---@field next_window_id integer
@@ -49,9 +51,17 @@ global = {}
 ---@field window_type WindowType @ unique identifier
 ---@field initial_title string
 ---@field on_created fun(window_state: WindowState)?
+---Called through `ensure_valid` when the window was destroyed but has been recreated again.
+---The `window_state` is the new window state, same one passed to `on_created` which runs right
+---before this event, `old_window_state` is a shallow copy of the state before recreating it.
+---`window_state` is the exact same table instance as it was before recreating it, so all references
+---to it are still correct, but not references to any tables inside of that `window_state`
+---@field on_recreated fun(window_state: WindowState, old_window_state: WindowState)?
 ---@field on_location_and_size_applied fun(window_state: WindowState)?
 ---@field on_pre_close (fun(window_state: WindowState):boolean?)? @ return `true` to cancel closing
 ---@field on_closed fun(window_state: WindowState)?
+---@field on_focus_gained fun(window_state: WindowState)?
+---@field on_focus_lost fun(window_state: WindowState)?
 ---@field initial_size Size
 ---@field minimal_size Size
 
@@ -88,6 +98,7 @@ global = {}
 ---@field is_window_edge boolean? @ dummy windows for snapping to edges, only have location and size
 ---@field parent_window WindowState?
 ---@field child_windows WindowStateList @ sorted from front to back just like `window_list`
+---@field closed boolean? @ has this window been closed?
 ---
 ---hierarchy windows
 ---@field hierarchy_elem LuaGuiElement
@@ -98,6 +109,7 @@ global = {}
 ---
 ---runner windows
 ---@field search_field LuaGuiElement
+---@field query string
 ---@field list_flow LuaGuiElement
 ---@field shown_entries RunnerListEntry[]
 ---
