@@ -423,8 +423,8 @@ local function snap_axis_internal(
       return true
     end
   end
-  local other = window_state.player.window_list.first
-  while other do
+  ---@param other WindowState
+  local function snap_to_window(other)
     if overlapping(window_state, other) then
       -- check if the other window's edge is touching - or close to - this window's opposite edge
       if try_snap_to(get_anchor_xy(other, anchor)) then return true end
@@ -435,6 +435,15 @@ local function snap_axis_internal(
       -- perform the same snapping logic as before, but this time with the same window side
       if try_snap_to(get_anchor_xy(other, opposite_anchor)) then return true end
     end
+  end
+  local player = window_state.player
+  if snap_to_window(player.left_screen_edge_dummy) then return true end
+  if snap_to_window(player.right_screen_edge_dummy) then return true end
+  if snap_to_window(player.top_screen_edge_dummy) then return true end
+  if snap_to_window(player.bottom_screen_edge_dummy) then return true end
+  local other = window_state.player.window_list.first
+  while other do
+    if snap_to_window(other) then return true end
     other = other.next
   end
   return false
@@ -1144,15 +1153,15 @@ end
 local function update_screen_edge_windows(player)
   local resolution = player.resolution
   -- left
-  player.windows_by_id[1].size.height = resolution.height
+  player.left_screen_edge_dummy.size.height = resolution.height
   -- right
-  player.windows_by_id[2].location.x = resolution.width
-  player.windows_by_id[2].size.height = resolution.height
+  player.right_screen_edge_dummy.location.x = resolution.width
+  player.right_screen_edge_dummy.size.height = resolution.height
   -- top
-  player.windows_by_id[3].size.width = resolution.width
+  player.top_screen_edge_dummy.size.width = resolution.width
   -- bottom
-  player.windows_by_id[4].location.y = resolution.height
-  player.windows_by_id[4].size.width = resolution.width
+  player.bottom_screen_edge_dummy.location.y = resolution.height
+  player.bottom_screen_edge_dummy.size.width = resolution.width
 end
 
 ---@param event EventData.on_player_display_resolution_changed
@@ -1164,54 +1173,52 @@ local function on_player_display_resolution_changed(event)
   update_screen_edge_windows(player)
   update_empty_widget_covering_the_entire_screen(player)
   for _, window_state in pairs(player.windows_by_id) do
-    if not window_state.is_window_edge then
-      -- stop all resizing because window scaling is handled differently
-      -- unfortunately the location changed events for the resize frames happen before this event
-      -- so there will be a gap round this window and the screen edge if resizing was enabled
-      if window_state.resizing then
-        set_resizing(window_state, false)
-      end
-
-      if not window_state.location_before_rescale then
-        window_state.location_before_rescale = {
-          x = window_state.location.x,
-          y = window_state.location.y,
-        }
-        window_state.resolution_for_location_before_rescale = event.old_resolution
-      end
-
-      if not window_state.size_before_rescale then
-        window_state.size_before_rescale = {
-          width = window_state.size.width,
-          height = window_state.size.height,
-        }
-        window_state.resolution_for_size_before_rescale = event.old_resolution
-      end
-
-      local size = window_state.size_before_rescale
-      local resolution_for_size_before_rescale = window_state.resolution_for_size_before_rescale
-      ---@cast size -nil
-      ---@cast resolution_for_size_before_rescale -nil
-      local x_multiplier = (resolution.width / resolution_for_size_before_rescale.width)
-      local y_multiplier = (resolution.height / resolution_for_size_before_rescale.height)
-      set_width(window_state, math.floor(0.5 + size.width * x_multiplier), anchors.top_left)
-      set_height(window_state, math.floor(0.5 + size.height * y_multiplier), anchors.top_left)
-      window_state.size_before_rescale = size
-      window_state.resolution_for_size_before_rescale = resolution_for_size_before_rescale
-
-      local location_before_rescale = window_state.location_before_rescale
-      local resolution_for_location_before_rescale = window_state.resolution_for_size_before_rescale
-      ---@cast location_before_rescale -nil
-      ---@cast resolution_for_location_before_rescale -nil
-      x_multiplier = (resolution.width / resolution_for_location_before_rescale.width)
-      y_multiplier = (resolution.height / resolution_for_location_before_rescale.height)
-      set_location_x(window_state, math.floor(0.5 + location_before_rescale.x * x_multiplier))
-      set_location_y(window_state, math.floor(0.5 + location_before_rescale.y * y_multiplier))
-      window_state.location_before_rescale = location_before_rescale
-      window_state.resolution_for_location_before_rescale = resolution_for_location_before_rescale
-
-      apply_location_and_size_changes(window_state)
+    -- stop all resizing because window scaling is handled differently
+    -- unfortunately the location changed events for the resize frames happen before this event
+    -- so there will be a gap round this window and the screen edge if resizing was enabled
+    if window_state.resizing then
+      set_resizing(window_state, false)
     end
+
+    if not window_state.location_before_rescale then
+      window_state.location_before_rescale = {
+        x = window_state.location.x,
+        y = window_state.location.y,
+      }
+      window_state.resolution_for_location_before_rescale = event.old_resolution
+    end
+
+    if not window_state.size_before_rescale then
+      window_state.size_before_rescale = {
+        width = window_state.size.width,
+        height = window_state.size.height,
+      }
+      window_state.resolution_for_size_before_rescale = event.old_resolution
+    end
+
+    local size = window_state.size_before_rescale
+    local resolution_for_size_before_rescale = window_state.resolution_for_size_before_rescale
+    ---@cast size -nil
+    ---@cast resolution_for_size_before_rescale -nil
+    local x_multiplier = (resolution.width / resolution_for_size_before_rescale.width)
+    local y_multiplier = (resolution.height / resolution_for_size_before_rescale.height)
+    set_width(window_state, math.floor(0.5 + size.width * x_multiplier), anchors.top_left)
+    set_height(window_state, math.floor(0.5 + size.height * y_multiplier), anchors.top_left)
+    window_state.size_before_rescale = size
+    window_state.resolution_for_size_before_rescale = resolution_for_size_before_rescale
+
+    local location_before_rescale = window_state.location_before_rescale
+    local resolution_for_location_before_rescale = window_state.resolution_for_size_before_rescale
+    ---@cast location_before_rescale -nil
+    ---@cast resolution_for_location_before_rescale -nil
+    x_multiplier = (resolution.width / resolution_for_location_before_rescale.width)
+    y_multiplier = (resolution.height / resolution_for_location_before_rescale.height)
+    set_location_x(window_state, math.floor(0.5 + location_before_rescale.x * x_multiplier))
+    set_location_y(window_state, math.floor(0.5 + location_before_rescale.y * y_multiplier))
+    window_state.location_before_rescale = location_before_rescale
+    window_state.resolution_for_location_before_rescale = resolution_for_location_before_rescale
+
+    apply_location_and_size_changes(window_state)
   end
 end
 
@@ -1222,12 +1229,10 @@ local function on_player_display_scale_changed(event)
   player.display_scale = player.player.display_scale
   update_empty_widget_covering_the_entire_screen(player)
   for _, window_state in pairs(player.windows_by_id) do
-    if not window_state.is_window_edge then
-      -- changing the scale affects the minimal_size, so we reapply width and height
-      set_size(window_state, window_state.size, anchors.top_left)
-      -- and applying size to the gui element depends on scale regardless of size having changed
-      apply_location_and_size_changes(window_state)
-    end
+    -- changing the scale affects the minimal_size, so we reapply width and height
+    set_size(window_state, window_state.size, anchors.top_left)
+    -- and applying size to the gui element depends on scale regardless of size having changed
+    apply_location_and_size_changes(window_state)
   end
 end
 
@@ -1254,24 +1259,23 @@ end
 
 ---@param player PlayerData
 local function init_player(player)
-  ---@param window_id integer
+  ---@param window_id integer?
   local function make_dummy_window(window_id)
     return {
       window_id = window_id,
       location = {x = 0, y = 0},
       size = {width = 0, height = 0},
-      is_window_edge = true,
+      is_display_edge = true,
     }
   end
   player.window_list = ll.new_list(false)
   player.windows_by_type = {}
-  player.windows_by_id = {
-    make_dummy_window(1), -- left
-    make_dummy_window(2), -- right
-    make_dummy_window(3), -- top
-    make_dummy_window(4), -- bottom
-  }
-  player.next_window_id = 5
+  player.left_screen_edge_dummy = make_dummy_window()
+  player.right_screen_edge_dummy = make_dummy_window()
+  player.top_screen_edge_dummy = make_dummy_window()
+  player.bottom_screen_edge_dummy = make_dummy_window()
+  player.windows_by_id = {}
+  player.next_window_id = 1
   player.resolution = player.player.display_resolution
   player.display_scale = player.player.display_scale
   player.windows_by_title = {}
