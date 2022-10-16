@@ -1197,7 +1197,6 @@ local function on_player_display_scale_changed(event)
   local player = util.get_player(event)
   if not player then return end
   player.display_scale = player.player.display_scale
-  update_screen_edge_windows(player)
   update_empty_widget_covering_the_entire_screen(player)
   for _, window_state in pairs(player.windows_by_id) do
     if not window_state.is_window_edge then
