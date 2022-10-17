@@ -762,7 +762,15 @@ local on_resize_frame_location_changed = gui.register_handler(
   "on_resize_frame_location_changed",
   ---@param event EventData.on_gui_location_changed
   function(player, tags, event)
+    -- only handle the event if this frame is the last clicked frame which makes it _very_ likely
+    -- that the user dragged the frame and it was _not_ moved due to a resolution change.
+    -- If the user clicks one of the invisible frames and then changes factorio's resolution then
+    -- the problem thinks the user both changed resolution and moved the invisible frame (if it was
+    -- pushed back on the screen by factorio) which has undesirable effects. But this is a rare
+    -- enough edge case to the point where leaving invisible frames partially outside of the screen
+    -- is perfectly fine
     if event.element.children[1] ~= player.last_clicked_elem then return end
+
     local window_state = player.windows_by_id[tags.window_id]
     local elem_location = event.element.location ---@cast elem_location -nil
     -- matching the math in `position_invisible_frames`
@@ -1169,13 +1177,6 @@ local function on_player_display_resolution_changed(event)
   update_screen_edge_windows(player)
   update_empty_widget_covering_the_entire_screen(player)
   for _, window_state in pairs(player.windows_by_id) do
-    -- stop all resizing because window scaling is handled differently
-    -- unfortunately the location changed events for the resize frames happen before this event
-    -- so there will be a gap round this window and the screen edge if resizing was enabled
-    if window_state.resizing then
-      set_resizing(window_state, false)
-    end
-
     if not window_state.location_before_rescale then
       window_state.location_before_rescale = {
         x = window_state.location.x,
