@@ -1204,7 +1204,7 @@ local function on_player_display_resolution_changed(event)
     window_state.resolution_for_size_before_rescale = resolution_for_size_before_rescale
 
     local location_before_rescale = window_state.location_before_rescale
-    local resolution_for_location_before_rescale = window_state.resolution_for_size_before_rescale
+    local resolution_for_location_before_rescale = window_state.resolution_for_location_before_rescale
     ---@cast location_before_rescale -nil
     ---@cast resolution_for_location_before_rescale -nil
     x_multiplier = (resolution.width / resolution_for_location_before_rescale.width)
