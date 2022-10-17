@@ -843,12 +843,6 @@ local function set_resizing(window_state, resizing)
     and "gui_editor_selected_frame_action_button" or "frame_action_button"
   window_state.resize_button.sprite = resizing
     and "gui-editor-resize-black" or "gui-editor-resize-white"
-  window_state.draggable_space.style = resizing
-    and "draggable_space_header" or "empty_widget"
-  local draggable_space_style = window_state.draggable_space.style
-  draggable_space_style.height = 24
-  draggable_space_style.horizontally_stretchable = true
-  draggable_space_style.right_margin = 4
 
   if resizing then
     local create = create_invisible_frame
@@ -925,7 +919,7 @@ local function create_window_elements(window_state)
           },
           {
             type = "empty-widget",
-            style = "empty_widget", -- draggable_space_header
+            style = "draggable_space_header",
             name = "draggable_space",
             style_mods = {
               height = 24,
@@ -937,7 +931,7 @@ local function create_window_elements(window_state)
             type = "sprite-button",
             style = "frame_action_button",
             name = "resize_button",
-            tooltip = "Resize/Move",
+            tooltip = "Resize",
             sprite = "gui-editor-resize-white",
             hovered_sprite = "gui-editor-resize-black",
             clicked_sprite = "gui-editor-resize-black",
