@@ -762,6 +762,7 @@ local on_resize_frame_location_changed = gui.register_handler(
   "on_resize_frame_location_changed",
   ---@param event EventData.on_gui_location_changed
   function(player, tags, event)
+    if event.element.children[1] ~= player.last_clicked_elem then return end
     local window_state = player.windows_by_id[tags.window_id]
     local elem_location = event.element.location ---@cast elem_location -nil
     -- matching the math in `position_invisible_frames`
@@ -1127,6 +1128,7 @@ local function on_gui_click(event)
   -- will be moved to the front and and all invisible frames stay on top
   local player = util.get_player(event)
   if not player then return end
+  player.last_clicked_elem = event.element -- save last clicked element
   local main_elem = event.element
   local parent = main_elem.parent
   -- just in case there is some way for the root LuaGuiElements to be clickable
