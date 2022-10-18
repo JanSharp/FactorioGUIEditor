@@ -360,6 +360,8 @@ window_manager.register_window{
       },
     })
     window_state.hierarchy_elem = hierarchy_inner.hierarchy
+
+    window_manager.set_resizing(window_state, true)
   end,
 }
 

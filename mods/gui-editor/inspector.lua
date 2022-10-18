@@ -216,6 +216,8 @@ window_manager.register_window{
     -- doesn't need to be initialized because the function that creates editors for the inspector
     -- sets active_editors to `{}`
     -- window_state.active_editors = {}
+
+    window_manager.set_resizing(window_state, true)
   end,
 
   ---@param window_state WindowState

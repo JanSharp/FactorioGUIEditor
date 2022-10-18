@@ -266,6 +266,8 @@ window_manager.register_window{
     update_list(window_state)
 
     window_state.search_field.focus()
+
+    window_manager.set_resizing(window_state, true)
   end,
 
   ---@param window_state WindowState
