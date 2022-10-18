@@ -10,7 +10,6 @@ local ll = require("__gui-editor__.linked_list")
 -- TODO: use flags and safe old values for maximizing horizontally and vertically
 -- NOTE: snapping logic currently snaps to window edges that are covered by other windows in front [...]
 -- changing this isn't exactly straight forward however, and it's not a big deal. But still worth a note
--- TODO: add lock button to toggle resizing, so have a separate maximize button
 -- TODO: add options for custom buttons in the title bar
 
 ---@type table<string, Window>
@@ -100,7 +99,7 @@ local function position_movement_frame(window_state)
     y = location.y + offset,
   }
   window_state.movement_frame.style.size = {
-    scaled_width - 20 - (24 + 4) * 2,
+    scaled_width - 20 - (24 + 4) * 3,
     28,
   }
 end
@@ -848,10 +847,14 @@ end
 local function set_resizing(window_state, resizing)
   if window_state.resizing == resizing then return end
   window_state.resizing = resizing
-  window_state.resize_button.style = resizing
-    and "gui_editor_selected_frame_action_button" or "frame_action_button"
-  window_state.resize_button.sprite = resizing
-    and "gui-editor-resize-black" or "gui-editor-resize-white"
+  window_state.lock_button.tooltip = resizing
+    and "Disable Resizing" or "Enable Resizing"
+  window_state.lock_button.sprite = resizing
+    and "gui-editor-unlocked-white" or "gui-editor-locked-white"
+  window_state.lock_button.hovered_sprite = resizing
+    and "gui-editor-unlocked-black" or "gui-editor-locked-black"
+  window_state.lock_button.clicked_sprite = resizing
+    and "gui-editor-unlocked-black" or "gui-editor-locked-black"
 
   if resizing then
     local create = create_invisible_frame
@@ -869,16 +872,29 @@ local function set_resizing(window_state, resizing)
   end
 end
 
-local on_resize_button_click = gui.register_handler(
-  "on_resize_button_click",
+local on_lock_button_click = gui.register_handler(
+  "on_lock_button_click",
   ---@param event EventData.on_gui_click
   function(player, tags, event)
-    if event.shift or event.alt then return end
+    if event.button == defines.mouse_button_type.left then
+      local window_state = player.windows_by_id[tags.window_id]
+      set_resizing(window_state, not window_state.resizing)
+    end
+  end
+)
+
+local on_maximize_button_click = gui.register_handler(
+  "on_maximize_button_click",
+  ---@param event EventData.on_gui_click
+  function(player, tags, event)
     local window_state = player.windows_by_id[tags.window_id]
     if event.button == defines.mouse_button_type.left then
-      if event.control then return end
-      set_resizing(window_state, not window_state.resizing)
+      set_location(window_state, {x = 0, y = 0})
+      set_size(window_state, window_state.player.resolution, anchors.top_left)
+      apply_location_and_size_changes(window_state)
+      -- NOTE: with the addition of maximized flags this should also make the maximize button look pressed
     elseif event.button == defines.mouse_button_type.right then
+      if event.shift or event.alt then return end
       if event.control then
         set_location_x(window_state, 0)
         set_width(window_state, window_state.player.resolution.width, anchors.top_left)
@@ -939,13 +955,24 @@ local function create_window_elements(window_state)
           {
             type = "sprite-button",
             style = "frame_action_button",
-            name = "resize_button",
-            tooltip = "Resize",
+            name = "lock_button",
+            tooltip = "Enable Resizing",
+            sprite = "gui-editor-locked-white",
+            hovered_sprite = "gui-editor-locked-black",
+            clicked_sprite = "gui-editor-locked-black",
+            tags = {window_id = window_state.id},
+            events = {[defines.events.on_gui_click] = on_lock_button_click},
+          },
+          {
+            type = "sprite-button",
+            style = "frame_action_button",
+            name = "maximize_button",
+            tooltip = "Maximize",
             sprite = "gui-editor-resize-white",
             hovered_sprite = "gui-editor-resize-black",
             clicked_sprite = "gui-editor-resize-black",
             tags = {window_id = window_state.id},
-            events = {[defines.events.on_gui_click] = on_resize_button_click},
+            events = {[defines.events.on_gui_click] = on_maximize_button_click},
           },
           {
             type = "sprite-button",
@@ -966,7 +993,8 @@ local function create_window_elements(window_state)
   window_state.header_elem = inner.header_flow
   window_state.title_label = inner.title_label
   window_state.draggable_space = inner.draggable_space
-  window_state.resize_button = inner.resize_button
+  window_state.lock_button = inner.lock_button
+  window_state.maximize_button = inner.maximize_button
 
   set_size(window_state, window_state.size, anchors.top_left)
   apply_location_and_size_changes_internal(window_state)
@@ -989,7 +1017,7 @@ local function create_window(player, window_type, parent_window)
     -- title_label = inner.title_label,
     title = window.initial_title,
     -- draggable_space = inner.draggable_space,
-    -- resize_button = inner.resize_button,
+    -- lock_button = inner.lock_button,
     resizing = false,
     location = {x = 0, y = 0},
     size = {

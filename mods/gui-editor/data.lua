@@ -117,6 +117,7 @@ styles.gui_editor_selection_textfield = {
   minimal_height = 0,
 }
 
+-- NOTE: _currently_ unused, but very most likely used again soon TM
 styles.gui_editor_selected_frame_action_button = {
   type = "button_style",
   parent = "frame_action_button",
@@ -160,16 +161,25 @@ local fira_code_font_size = 12
 -- really weird with the cursor going so much farther down than the actual text
 -- default-mono is kind of similar, but not as extreme. Although I didn't test anything but 14
 
-data:extend{
-  {
+local function make_gui_icon(name)
+  return {
     type = "sprite",
-    name = "gui-editor-resize-white",
-    filename = "__gui-editor__/graphics/icons/resize-white.png",
+    name = "gui-editor-"..name,
+    filename = "__gui-editor__/graphics/icons/"..name..".png",
     width = 32,
     height = 32,
     flags = {"gui-icon"},
     scale = 0.5,
-  },
+  }
+end
+
+data:extend{
+  make_gui_icon("resize-white"),
+  make_gui_icon("resize-black"),
+  make_gui_icon("locked-white"),
+  make_gui_icon("locked-black"),
+  make_gui_icon("unlocked-white"),
+  make_gui_icon("unlocked-black"),
   {
     type = "sprite",
     name = "gui-editor-script-error",
@@ -179,15 +189,6 @@ data:extend{
     height = 6 * 2,
     x = 80,
     y = 930,
-    flags = {"gui-icon"},
-    scale = 0.5,
-  },
-  {
-    type = "sprite",
-    name = "gui-editor-resize-black",
-    filename = "__gui-editor__/graphics/icons/resize-black.png",
-    width = 32,
-    height = 32,
     flags = {"gui-icon"},
     scale = 0.5,
   },

@@ -86,8 +86,9 @@ global = {}
 ---@field header_elem LuaGuiElement
 ---@field draggable_space LuaGuiElement
 ---@field movement_frame LuaGuiElement
----@field resize_button LuaGuiElement
----resize/movement frames
+---@field lock_button LuaGuiElement
+---@field maximize_button LuaGuiElement
+---resize frames
 ---@field left_resize_frame LuaGuiElement
 ---@field right_resize_frame LuaGuiElement
 ---@field top_resize_frame LuaGuiElement
