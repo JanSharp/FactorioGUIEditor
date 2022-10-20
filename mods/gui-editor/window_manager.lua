@@ -11,7 +11,6 @@ local ll = require("__gui-editor__.linked_list")
 -- changing this isn't exactly straight forward however, and it's not a big deal. But still worth a note
 -- TODO: add options for custom buttons in the title bar
 -- TODO: support multiple (or zero) movement frames
--- TODO: ensure all windows have proper minimal sizes to prevent any invisible frames from getting negative size
 -- TODO: change snapping to reasonable interpret anchors. [...]
 -- snapping movement to the right with anchor top_left doesn't make sense. it should be top_right
 
@@ -66,6 +65,20 @@ local function register_window(window)
   if windows[window.window_type] then
     error("The window_type '"..window.window_type.."' already exists.")
   end
+
+  local min_min_width = 20 + (24 + 4) * 3
+  if window.minimal_size.width < min_min_width then
+    error("minimal_size.width for window_type '"..window.window_type
+      .."' must be at least '"..min_min_width.."'."
+    )
+  end
+  local min_min_height = 20 + 28
+  if window.minimal_size.height < min_min_height then
+    error("minimal_size.height for window_type '"..window.window_type
+      .."' must be at least '"..min_min_height.."'."
+    )
+  end
+
   windows[window.window_type] = window
 end
 
