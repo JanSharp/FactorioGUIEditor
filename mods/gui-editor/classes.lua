@@ -22,6 +22,7 @@ global = {}
 ---@field windows_by_title table<string, {size: integer, window_states: table<integer, WindowState>}> @ title => window_id => window_state
 ---@field resolution DisplayResolution
 ---@field display_scale number
+---@field display_dummy WindowState
 ---@field left_screen_edge_dummy WindowState
 ---@field right_screen_edge_dummy WindowState
 ---@field top_screen_edge_dummy WindowState
@@ -110,7 +111,9 @@ global = {}
 ---@field resolution_for_location_before_rescale DisplayResolution?
 ---@field size_before_rescale Size? @ rescale being the auto rescale on resolution change
 ---@field resolution_for_size_before_rescale DisplayResolution?
----@field is_display_edge boolean? @ dummy windows for snapping to edges, only have location and size
+---@field is_dummy boolean? @ only has location and size
+---@field is_display_edge boolean? @ dummy windows for snapping to edges
+---@field is_display_dummy boolean? @ dummy window for calculating anchor locations
 ---@field parent_window WindowState?
 ---@field child_windows WindowStateList @ sorted from front to back just like `window_list`
 ---@field closed boolean? @ has this window been closed?

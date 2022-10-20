@@ -267,6 +267,17 @@ window_manager.register_window{
 
     window_state.search_field.focus()
 
+    local top_center_location = window_manager.get_anchor_location(
+      window_state.player.display_dummy,
+      window_manager.anchors.top_center
+    )
+    window_manager.set_anchor_location(
+      window_state,
+      top_center_location,
+      window_manager.anchors.top_center
+    )
+    window_manager.apply_location_and_size_changes(window_state)
+
     window_manager.set_resizing(window_state, true)
   end,
 

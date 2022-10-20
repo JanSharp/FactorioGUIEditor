@@ -3,7 +3,6 @@ local gui = require("__gui-editor__.gui")
 local util = require("__gui-editor__.util")
 local ll = require("__gui-editor__.linked_list")
 
--- TODO: add functions for centering horizontally and vertically
 -- NOTE: maybe add quite a few functions for window resizing and movement, like move to a side [...]
 -- of the screen (all 4), move to corner, snap (move and or resize) to window/screen edge in a
 -- direction
@@ -1294,8 +1293,11 @@ local function on_gui_click(event)
 end
 
 ---@param player PlayerData
-local function update_screen_edge_windows(player)
+local function update_display_dummy_windows(player)
   local resolution = player.resolution
+  -- display
+  player.display_dummy.size.width = resolution.width
+  player.display_dummy.size.height = resolution.height
   -- left
   player.left_screen_edge_dummy.size.height = resolution.height
   -- right
@@ -1314,7 +1316,7 @@ local function on_player_display_resolution_changed(event)
   if not player then return end
   local resolution = player.player.display_resolution
   player.resolution = resolution
-  update_screen_edge_windows(player)
+  update_display_dummy_windows(player)
   update_empty_widget_covering_the_entire_screen(player)
   for _, window_state in pairs(player.windows_by_id) do
     if not window_state.location_before_rescale then
@@ -1396,27 +1398,29 @@ end
 
 ---@param player PlayerData
 local function init_player(player)
-  ---@param window_id integer?
-  local function make_dummy_window(window_id)
+  local function make_edge_dummy_window()
     return {
-      window_id = window_id,
       location = {x = 0, y = 0},
       size = {width = 0, height = 0},
+      is_dummy = true,
       is_display_edge = true,
     }
   end
   player.window_list = ll.new_list(false)
   player.windows_by_type = {}
-  player.left_screen_edge_dummy = make_dummy_window()
-  player.right_screen_edge_dummy = make_dummy_window()
-  player.top_screen_edge_dummy = make_dummy_window()
-  player.bottom_screen_edge_dummy = make_dummy_window()
+  player.display_dummy = make_edge_dummy_window()
+  player.display_dummy.is_display_edge = nil
+  player.display_dummy.is_display_dummy = true
+  player.left_screen_edge_dummy = make_edge_dummy_window()
+  player.right_screen_edge_dummy = make_edge_dummy_window()
+  player.top_screen_edge_dummy = make_edge_dummy_window()
+  player.bottom_screen_edge_dummy = make_edge_dummy_window()
   player.windows_by_id = {}
   player.next_window_id = 1
   player.resolution = player.player.display_resolution
   player.display_scale = player.player.display_scale
   player.windows_by_title = {}
-  update_screen_edge_windows(player)
+  update_display_dummy_windows(player)
 end
 
 ---@class __gui-editor__.window_manager
