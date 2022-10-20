@@ -3,9 +3,6 @@ local gui = require("__gui-editor__.gui")
 local util = require("__gui-editor__.util")
 local ll = require("__gui-editor__.linked_list")
 
--- NOTE: maybe add quite a few functions for window resizing and movement, like move to a side [...]
--- of the screen (all 4), move to corner, snap (move and or resize) to window/screen edge in a
--- direction
 -- TODO: use flags and safe old values for maximizing horizontally and vertically
 -- NOTE: snapping logic currently snaps to window edges that are covered by other windows in front [...]
 -- changing this isn't exactly straight forward however, and it's not a big deal. But still worth a note
@@ -669,6 +666,48 @@ local function snap_resize(window_state, direction)
     -- because vertically touching windows can snap horizontal edges to align with each other
     snap_x()
   end
+end
+
+---@param window_state WindowState
+local function push_onto_display_x(window_state)
+  local resolution_width = window_state.player.resolution.width
+  if window_state.size.width > resolution_width then
+    set_anchor_location_x(window_state, math.ceil(resolution_width / 2), anchors.top_center)
+  else
+    local left = get_anchor_location_x(window_state, anchors.top_left)
+    if left < 0 then
+      set_location_x(window_state, 0)
+    else
+      local right = get_anchor_location_x(window_state, anchors.top_right)
+      if right >= resolution_width then
+        set_anchor_location_x(window_state, resolution_width, anchors.top_right)
+      end
+    end
+  end
+end
+
+---@param window_state WindowState
+local function push_onto_display_y(window_state)
+  local resolution_height = window_state.player.resolution.height
+  if window_state.size.height > resolution_height then
+    set_location_y(window_state, 0)
+  else
+    local top = get_anchor_location_y(window_state, anchors.top_left)
+    if top < 0 then
+      set_location_y(window_state, 0)
+    else
+      local bottom = get_anchor_location_y(window_state, anchors.bottom_left)
+      if bottom >= resolution_height then
+        set_anchor_location_y(window_state, resolution_height, anchors.bottom_left)
+      end
+    end
+  end
+end
+
+---@param window_state WindowState
+local function push_onto_display(window_state)
+  push_onto_display_x(window_state)
+  push_onto_display_y(window_state)
 end
 
 ---@param window_state WindowState
@@ -1502,6 +1541,9 @@ return {
   overlapping_vertically = overlapping_vertically,
   snap_horizontally = snap_horizontally,
   snap_vertically = snap_vertically,
+  push_onto_display_x = push_onto_display_x,
+  push_onto_display_y = push_onto_display_y,
+  push_onto_display = push_onto_display,
   snap_movement = snap_movement,
   snap_resize = snap_resize,
   apply_location_and_size_changes = apply_location_and_size_changes,

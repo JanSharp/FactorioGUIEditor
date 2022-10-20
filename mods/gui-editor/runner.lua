@@ -18,6 +18,14 @@ local function perform_action_for_entry(window_state, entry)
     ["focus_window"] = function()
       window_manager.bring_to_front(entry.window_state_to_focus)
     end,
+    ["push_onto_display"] = function()
+      local other_window_state = window_state.player.window_list.first
+      while other_window_state do
+        window_manager.push_onto_display(other_window_state)
+        window_manager.apply_location_and_size_changes(other_window_state)
+        other_window_state = other_window_state.next
+      end
+    end,
   })[entry.entry_type] or function()
     error("Unknown entry type '"..entry.entry_type.."'.")
   end)()
@@ -55,6 +63,9 @@ local function get_display_text(entry)
     end,
     ["focus_window"] = function()
       return "Focus "..entry.window_state_to_focus.display_title
+    end,
+    ["push_onto_display"] = function()
+      return "Push windows onto display"
     end,
   })[entry.entry_type] or function()
     error("Not implemented entry type '"..entry.entry_type.."'.")
@@ -343,6 +354,7 @@ local function init_player(player)
       window_type = window_type,
     })
   end
+  add_search_term(player, {entry_type = "push_onto_display"})
 end
 
 ---@param player PlayerData

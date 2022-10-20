@@ -146,6 +146,7 @@ global = {}
 ---@alias RunnerListEntryType
 ---| "create_window"
 ---| "focus_window"
+---| "push_onto_display"
 
 ---@class RunnerListEntry
 ---@field button LuaGuiElement
