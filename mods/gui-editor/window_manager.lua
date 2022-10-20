@@ -11,8 +11,6 @@ local ll = require("__gui-editor__.linked_list")
 -- changing this isn't exactly straight forward however, and it's not a big deal. But still worth a note
 -- TODO: add options for custom buttons in the title bar
 -- TODO: support multiple (or zero) movement frames
--- TODO: change snapping to reasonable interpret anchors. [...]
--- snapping movement to the right with anchor top_left doesn't make sense. it should be top_right
 
 ---@type table<string, Window>
 local windows = {}
@@ -310,12 +308,23 @@ local function get_anchor_location(window_state, anchor)
 end
 
 ---@param anchor WindowAnchor
+local function get_opposite_anchor_x(anchor)
+  -- flip around 0.5
+  return (anchor.x - 0.5) * -1 + 0.5
+end
+
+---@param anchor WindowAnchor
+local function get_opposite_anchor_y(anchor)
+  -- flip around 0.5
+  return (anchor.y - 0.5) * -1 + 0.5
+end
+
+---@param anchor WindowAnchor
 ---@return WindowAnchor
 local function get_opposite_anchor(anchor)
-  -- flip around 0.5 on both axis
   return {
-    x = (anchor.x - 0.5) * -1 + 0.5,
-    y = (anchor.y - 0.5) * -1 + 0.5,
+    x = get_opposite_anchor_x(anchor),
+    y = get_opposite_anchor_y(anchor),
   }
 end
 
@@ -377,7 +386,7 @@ local function set_width_from_location(window_state, x, anchor, direction)
   local partial_width = x - get_anchor_location_x(window_state, anchor)
   local width
   if bit32.band(direction, directions.right) ~= 0 then
-    width = partial_width / get_opposite_anchor(anchor).x
+    width = partial_width / get_opposite_anchor_x(anchor)
   else
     width = (-partial_width) / anchor.x
   end
@@ -392,7 +401,7 @@ local function set_height_from_location(window_state, y, anchor, direction)
   local partial_height = y - get_anchor_location_y(window_state, anchor)
   local height
   if bit32.band(direction, directions.bottom) ~= 0 then
-    height = partial_height / get_opposite_anchor(anchor).y
+    height = partial_height / get_opposite_anchor_y(anchor)
   else
     height = (-partial_height) / anchor.y
   end
@@ -494,9 +503,11 @@ end
 ---@param get_anchor_location_xy function @ `get_anchor_x` or `get_anchor_y`. The axis to snap
 ---@param get_anchor_location_yx function @ `get_anchor_y` or `get_anchor_x`. The other axis
 ---@param overlapping function @ `overlapping_vertically` or `overlapping_horizontally`
----@param anchor WindowAnchor
----@param direction WindowDirection
----@param snap_to_location fun(window_state: WindowState, xy: integer, anchor: WindowAnchor, direction: WindowDirection) @
+---@param this_anchor WindowAnchor @ an example for movement: top_right
+---@param other_anchor WindowAnchor @ an example for movement: top_left
+---@param final_anchor WindowAnchor @ an example for movement: top_right
+---@param direction WindowDirection @ an example for movement: right
+---@param snap_to_location fun(window_state: WindowState, xy: integer, final_anchor: WindowAnchor, direction: WindowDirection) @
 ---actual snap action. the anchor arg will be the same value as the anchor passed to this function.
 ---The xy value will be on the opposite side of the anchor
 ---@return boolean snapped @ returns true if it did snap or was already snapped
@@ -505,23 +516,25 @@ local function snap_axis_internal(
   get_anchor_location_xy,
   get_anchor_location_yx,
   overlapping,
-  anchor,
+  this_anchor,
+  other_anchor,
+  final_anchor,
   direction,
   snap_to_location
 )
-  local opposite_anchor = get_opposite_anchor(anchor)
+  local opposite_other_anchor = get_opposite_anchor(other_anchor)
   -- main axis
-  local this_anchor_xy = get_anchor_location_xy(window_state, opposite_anchor)
+  local this_anchor_xy = get_anchor_location_xy(window_state, this_anchor)
   -- other axis
-  local side_one_yx = get_anchor_location_yx(window_state, anchor)
-  local side_two_yx = get_anchor_location_yx(window_state, opposite_anchor)
+  local side_one_yx = get_anchor_location_yx(window_state, this_anchor)
+  local side_two_yx = get_anchor_location_yx(window_state, get_opposite_anchor(this_anchor))
   ---@param other_xy integer @ main axis of the other window
   local function try_snap_to(other_xy)
     if other_xy == this_anchor_xy then -- if it's touching, it's snapped already
       return true
     end
     if math.abs(other_xy - this_anchor_xy) <= 8 then -- not touching, but close. Snap to it
-      snap_to_location(window_state, other_xy, anchor, direction)
+      snap_to_location(window_state, other_xy, final_anchor, direction)
       return true
     end
   end
@@ -529,13 +542,13 @@ local function snap_axis_internal(
   local function snap_to_window(other)
     if overlapping(window_state, other) then
       -- check if the other window's edge is touching - or close to - this window's opposite edge
-      if try_snap_to(get_anchor_location_xy(other, anchor)) then return true end
+      if try_snap_to(get_anchor_location_xy(other, other_anchor)) then return true end
     -- check if the other axis's edges are touching
-    elseif side_one_yx == get_anchor_location_yx(other, opposite_anchor)
-      or side_two_yx == get_anchor_location_yx(other, anchor)
+    elseif side_one_yx == get_anchor_location_yx(other, opposite_other_anchor)
+      or side_two_yx == get_anchor_location_yx(other, other_anchor)
     then
       -- perform the same snapping logic as before, but this time with the same window side
-      if try_snap_to(get_anchor_location_xy(other, opposite_anchor)) then return true end
+      if try_snap_to(get_anchor_location_xy(other, opposite_other_anchor)) then return true end
     end
   end
   local player = window_state.player
@@ -552,38 +565,60 @@ local function snap_axis_internal(
 end
 
 ---@param window_state WindowState
----@param anchor WindowAnchor
+---@param this_anchor WindowAnchor
+---@param other_anchor WindowAnchor
+---@param final_anchor WindowAnchor
 ---@param direction WindowDirection
----@param snap_to_location fun(window_state: WindowState, x: integer, anchor: WindowAnchor) @
+---@param snap_to_location fun(window_state: WindowState, x: integer, final_anchor: WindowAnchor, direction: WindowDirection) @
 ---actual snap action. the anchor arg will be the same value as the anchor passed to this function.
 ---The x value will be on the opposite side of the anchor
 ---@return boolean snapped @ returns true if it did snap or was already snapped
-local function snap_horizontally(window_state, anchor, direction, snap_to_location)
+local function snap_horizontally(
+  window_state,
+  this_anchor,
+  other_anchor,
+  final_anchor,
+  direction,
+  snap_to_location
+)
   return snap_axis_internal(
     window_state,
     get_anchor_location_x,
     get_anchor_location_y,
     overlapping_vertically,
-    anchor,
+    this_anchor,
+    other_anchor,
+    final_anchor,
     direction,
     snap_to_location
   )
 end
 
 ---@param window_state WindowState
----@param anchor WindowAnchor
+---@param this_anchor WindowAnchor
+---@param other_anchor WindowAnchor
+---@param final_anchor WindowAnchor
 ---@param direction WindowDirection
----@param snap_to_location fun(window_state: WindowState, y: integer, anchor: WindowAnchor) @
+---@param snap_to_location fun(window_state: WindowState, y: integer, final_anchor: WindowAnchor, direction: WindowDirection) @
 ---actual snap action. the anchor arg will be the same value as the anchor passed to this function.
 ---The y value will be on the opposite side of the anchor
 ---@return boolean snapped @ returns true if it did snap or was already snapped
-local function snap_vertically(window_state, anchor, direction, snap_to_location)
+local function snap_vertically(
+  window_state,
+  this_anchor,
+  other_anchor,
+  final_anchor,
+  direction,
+  snap_to_location
+)
   return snap_axis_internal(
     window_state,
     get_anchor_location_y,
     get_anchor_location_x,
     overlapping_horizontally,
-    anchor,
+    this_anchor,
+    other_anchor,
+    final_anchor,
     direction,
     snap_to_location
   )
@@ -591,30 +626,14 @@ end
 
 ---@param window_state WindowState
 local function snap_movement(window_state)
-  ---@param window_state WindowState
-  ---@param x integer
-  ---@param anchor WindowAnchor
-  ---@diagnostic disable-next-line: redefined-local
-  local function set_x(window_state, x, anchor)
-    set_anchor_location_x(window_state, x, get_opposite_anchor(anchor))
-  end
-
-  ---@param window_state WindowState
-  ---@param y integer
-  ---@param anchor WindowAnchor
-  ---@diagnostic disable-next-line: redefined-local
-  local function set_y(window_state, y, anchor)
-    set_anchor_location_y(window_state, y, get_opposite_anchor(anchor))
-  end
-
   local function snap_x()
-    return snap_horizontally(window_state, anchors.top_left, directions.right, set_x)
-      or snap_horizontally(window_state, anchors.top_right, directions.left, set_x)
+    return snap_horizontally(window_state, anchors.top_right, anchors.top_left, anchors.top_right, directions.right, set_anchor_location_x)
+      or snap_horizontally(window_state, anchors.top_left, anchors.top_right, anchors.top_left, directions.left, set_anchor_location_x)
   end
   local snapped_x = snap_x()
 
-  if (snap_vertically(window_state, anchors.top_left, directions.bottom, set_y)
-      or snap_vertically(window_state, anchors.bottom_left, directions.top, set_y)
+  if (snap_vertically(window_state, anchors.bottom_left, anchors.top_left, anchors.bottom_left, directions.bottom, set_anchor_location_y)
+      or snap_vertically(window_state, anchors.top_left, anchors.bottom_left, anchors.top_left, directions.top, set_anchor_location_y)
     )
     and not snapped_x
   then
@@ -628,13 +647,22 @@ end
 ---@param direction WindowDirection
 local function snap_resize(window_state, direction)
   local anchor = direction_to_anchor(direction)
+  local this_anchor = get_opposite_anchor(anchor)
   local function snap_x()
+    local other_anchor = {
+      x = anchor.x,
+      y = this_anchor.y,
+    }
     return bit32.band(direction, directions.left + directions.right) ~= 0
-      and snap_horizontally(window_state, anchor, direction, set_width_from_location)
+      and snap_horizontally(window_state, this_anchor, other_anchor, anchor, direction, set_width_from_location)
   end
   local snapped_x = snap_x()
+  local other_anchor = {
+    x = this_anchor.x,
+    y = anchor.y,
+  }
   if bit32.band(direction, directions.top + directions.bottom) ~= 0
-    and snap_vertically(window_state, anchor, direction, set_height_from_location)
+    and snap_vertically(window_state, this_anchor, other_anchor, anchor, direction, set_height_from_location)
     and not snapped_x
   then
     -- if y snapped, snap x again as long as x didn't already snap
@@ -1449,6 +1477,8 @@ return {
   get_vertical_direction_multiplier = get_vertical_direction_multiplier,
   new_anchors = new_anchors,
   anchors = anchors,
+  get_opposite_anchor_x = get_opposite_anchor_x,
+  get_opposite_anchor_y = get_opposite_anchor_y,
   get_opposite_anchor = get_opposite_anchor,
   direction_to_new_anchor = direction_to_new_anchor,
   direction_to_anchor = direction_to_anchor,
