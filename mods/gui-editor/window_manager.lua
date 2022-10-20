@@ -13,6 +13,8 @@ local ll = require("__gui-editor__.linked_list")
 -- TODO: add options for custom buttons in the title bar
 -- TODO: support multiple (or zero) movement frames
 -- TODO: ensure all windows have proper minimal sizes to prevent any invisible frames from getting negative size
+-- TODO: change snapping to reasonable interpret anchors. [...]
+-- snapping movement to the right with anchor top_left doesn't make sense. it should be top_right
 
 ---@type table<string, Window>
 local windows = {}
@@ -431,23 +433,29 @@ local function set_location(window_state, location)
 end
 
 ---@param window_state WindowState
----@param x integer @ to match the behavior for resizing,
----this location is at the opposite side of the anchor
+---@param x integer
 ---@param anchor WindowAnchor
-local function set_location_x_from_location(window_state, x, anchor)
-  local current_x = get_anchor_location_x(window_state, get_opposite_anchor(anchor))
+local function set_anchor_location_x(window_state, x, anchor)
+  local current_x = get_anchor_location_x(window_state, anchor)
   local diff = x - current_x
   set_location_x(window_state, window_state.location.x + diff)
 end
 
 ---@param window_state WindowState
----@param y integer @ to match the behavior for resizing,
----this location is at the opposite side of the anchor
+---@param y integer
 ---@param anchor WindowAnchor
-local function set_location_y_from_location(window_state, y, anchor)
-  local current_y = get_anchor_location_y(window_state, get_opposite_anchor(anchor))
+local function set_anchor_location_y(window_state, y, anchor)
+  local current_y = get_anchor_location_y(window_state, anchor)
   local diff = y - current_y
   set_location_y(window_state, window_state.location.y + diff)
+end
+
+---@param window_state WindowState
+---@param location GuiLocation
+---@param anchor WindowAnchor
+local function set_anchor_location(window_state, location, anchor)
+  set_anchor_location_x(window_state, location.x, anchor)
+  set_anchor_location_y(window_state, location.y, anchor)
 end
 
 ---@param window_state WindowState
@@ -571,13 +579,30 @@ end
 
 ---@param window_state WindowState
 local function snap_movement(window_state)
+  ---@param window_state WindowState
+  ---@param x integer
+  ---@param anchor WindowAnchor
+  ---@diagnostic disable-next-line: redefined-local
+  local function set_x(window_state, x, anchor)
+    set_anchor_location_x(window_state, x, get_opposite_anchor(anchor))
+  end
+
+  ---@param window_state WindowState
+  ---@param y integer
+  ---@param anchor WindowAnchor
+  ---@diagnostic disable-next-line: redefined-local
+  local function set_y(window_state, y, anchor)
+    set_anchor_location_y(window_state, y, get_opposite_anchor(anchor))
+  end
+
   local function snap_x()
-    return snap_horizontally(window_state, anchors.top_left, directions.right, set_location_x_from_location)
-      or snap_horizontally(window_state, anchors.top_right, directions.left, set_location_x_from_location)
+    return snap_horizontally(window_state, anchors.top_left, directions.right, set_x)
+      or snap_horizontally(window_state, anchors.top_right, directions.left, set_x)
   end
   local snapped_x = snap_x()
-  if (snap_vertically(window_state, anchors.top_left, directions.bottom, set_location_y_from_location)
-      or snap_vertically(window_state, anchors.bottom_left, directions.top, set_location_y_from_location)
+
+  if (snap_vertically(window_state, anchors.top_left, directions.bottom, set_y)
+      or snap_vertically(window_state, anchors.bottom_left, directions.top, set_y)
     )
     and not snapped_x
   then
@@ -1423,8 +1448,9 @@ return {
   set_location_x = set_location_x,
   set_location_y = set_location_y,
   set_location = set_location,
-  set_location_x_from_location = set_location_x_from_location,
-  set_location_y_from_location = set_location_y_from_location,
+  set_anchor_location_x = set_anchor_location_x,
+  set_anchor_location_y = set_anchor_location_y,
+  set_anchor_location = set_anchor_location,
   overlapping_horizontally = overlapping_horizontally,
   overlapping_vertically = overlapping_vertically,
   snap_horizontally = snap_horizontally,
