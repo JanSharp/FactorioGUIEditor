@@ -12,6 +12,7 @@ local ll = require("__gui-editor__.linked_list")
 -- changing this isn't exactly straight forward however, and it's not a big deal. But still worth a note
 -- TODO: add options for custom buttons in the title bar
 -- TODO: support multiple (or zero) movement frames
+-- TODO: ensure all windows have proper minimal sizes to prevent any invisible frames from getting negative size
 
 ---@type table<string, Window>
 local windows = {}

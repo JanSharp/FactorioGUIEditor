@@ -182,7 +182,7 @@ window_manager.register_window{
   window_type = "inspector",
   initial_title = "Inspector",
   initial_size = {width = 300, height = 500},
-  minimal_size = {width = 100, height = 100},
+  minimal_size = {width = 104, height = 100},
 
   ---@param window_state WindowState
   on_created = function(window_state)
