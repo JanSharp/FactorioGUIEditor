@@ -3,9 +3,12 @@ local gui = require("__gui-editor__.gui")
 local util = require("__gui-editor__.util")
 local ll = require("__gui-editor__.linked_list")
 
+---cSpell:ignore kwin
+-- snapping logic snaps to window edges that are covered by other windows in front.
+-- changing this isn't easy, and kwin isn't even doing this either and I never noticed
+-- after 10 months of using it, so there is no reason to implement this
+
 -- TODO: use flags and safe old values for maximizing horizontally and vertically
--- NOTE: snapping logic currently snaps to window edges that are covered by other windows in front [...]
--- changing this isn't exactly straight forward however, and it's not a big deal. But still worth a note
 -- TODO: add options for custom buttons in the title bar
 -- TODO: support multiple (or zero) movement frames
 
