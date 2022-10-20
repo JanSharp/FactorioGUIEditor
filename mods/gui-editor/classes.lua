@@ -75,6 +75,10 @@ global = {}
 ---@field initial_size Size
 ---@field minimal_size Size
 
+---@class WindowAnchor
+---@field x number @ percentage, 0 = left, 0.5 = center, 1 = right
+---@field y number @ percentage, 0 = top, 0.5 = center, 1 = bottom
+
 ---@class WindowState
 ---@field player PlayerData
 ---@field window_type string

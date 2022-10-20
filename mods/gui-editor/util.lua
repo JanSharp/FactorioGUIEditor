@@ -91,6 +91,12 @@ local function remove_from_array(array, element)
   end
 end
 
+---@param number number
+---@return integer
+local function round(number)
+  return math.floor(0.5 + number)
+end
+
 -- numbers used to order these fields first in order
 local fields_for_all_classes = {
   ["type"] = -7,
@@ -228,4 +234,5 @@ return {
   shallow_copy = shallow_copy,
   clear_table = clear_table,
   remove_from_array = remove_from_array,
+  round = round,
 }

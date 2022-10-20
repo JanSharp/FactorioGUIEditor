@@ -176,72 +176,132 @@ local directions = {
   bottom_right = 2 + 8,
 }
 
----@param direction WindowDirection|WindowAnchor
+---@param direction WindowDirection
 local function get_horizontal_direction_multiplier(direction)
   return bit32.band(direction, directions.right) ~= 0 and 1 or -1
 end
 
----@param direction WindowDirection|WindowAnchor
+---@param direction WindowDirection
 local function get_vertical_direction_multiplier(direction)
   return bit32.band(direction, directions.bottom) ~= 0 and 1 or -1
 end
 
----@alias WindowAnchor WindowDirection
+local new_anchors = {
+  ---@return WindowAnchor
+  top_left = function()
+    return {x = 0, y = 0}
+  end,
+  ---@return WindowAnchor
+  top_center = function()
+    return {x = 0.5, y = 0}
+  end,
+  ---@return WindowAnchor
+  top_right = function()
+    return {x = 1, y = 0}
+  end,
+  ---@return WindowAnchor
+  center_left = function()
+    return {x = 0, y = 0.5}
+  end,
+  ---@return WindowAnchor
+  center = function()
+    return {x = 0.5, y = 0.5}
+  end,
+  ---@return WindowAnchor
+  center_right = function()
+    return {x = 1, y = 0.5}
+  end,
+  ---@return WindowAnchor
+  bottom_left = function()
+    return {x = 0, y = 1}
+  end,
+  ---@return WindowAnchor
+  bottom_center = function()
+    return {x = 0.5, y = 1}
+  end,
+  ---@return WindowAnchor
+  bottom_right = function()
+    return {x = 1, y = 1}
+  end,
+}
 
--- enum doesn't work with this, unfortunately
 local anchors = {
-  top_left = directions.top_left,
-  top_right = directions.top_right,
-  bottom_left = directions.bottom_left,
-  bottom_right = directions.bottom_right,
+  top_left = new_anchors.top_left(),
+  top_center = new_anchors.top_center(),
+  top_right = new_anchors.top_right(),
+  center_left = new_anchors.center_left(),
+  center = new_anchors.center(),
+  center_right = new_anchors.center_right(),
+  bottom_left = new_anchors.bottom_left(),
+  bottom_center = new_anchors.bottom_center(),
+  bottom_right = new_anchors.bottom_right(),
 }
 
----@type table<WindowAnchor, WindowAnchor>
-local opposite_anchors = {
-  [anchors.top_left] = anchors.bottom_right,
-  [anchors.top_right] = anchors.bottom_left,
-  [anchors.bottom_left] = anchors.top_right,
-  [anchors.bottom_right] = anchors.top_left,
-}
+local direction_to_new_anchor
+local direction_to_anchor
+do
+  ---@type table<WindowDirection, fun():WindowAnchor>
+  local direction_to_new_anchor_lut = {
+    [directions.left] = new_anchors.top_right,
+    [directions.right] = new_anchors.top_left,
+    [directions.top] = new_anchors.bottom_left,
+    [directions.bottom] = new_anchors.top_left,
+    [directions.top_left] = new_anchors.bottom_right,
+    [directions.top_right] = new_anchors.bottom_left,
+    [directions.bottom_left] = new_anchors.top_right,
+    [directions.bottom_right] = new_anchors.top_left,
+  }
+  ---@param direction WindowDirection
+  function direction_to_new_anchor(direction)
+    return direction_to_new_anchor_lut[direction]()
+  end
 
----@type table<WindowDirection, WindowAnchor>
-local anchors_for_direction = {
-  [directions.left] = anchors.top_right,
-  [directions.right] = anchors.top_left,
-  [directions.top] = anchors.bottom_left,
-  [directions.bottom] = anchors.top_left,
-  [directions.top_left] = anchors.bottom_right,
-  [directions.top_right] = anchors.bottom_left,
-  [directions.bottom_left] = anchors.top_right,
-  [directions.bottom_right] = anchors.top_left,
-}
-
----@param window_state WindowState
----@param anchor WindowAnchor
-local function get_anchor_x(window_state, anchor)
-  if bit32.band(anchor, directions.left) ~= 0 then
-    return window_state.location.x
-  else -- right
-    return window_state.location.x + window_state.size.width
+  ---@type table<WindowDirection, WindowAnchor>
+  local direction_to_anchor_lut = {
+    [directions.left] = anchors.top_right,
+    [directions.right] = anchors.top_left,
+    [directions.top] = anchors.bottom_left,
+    [directions.bottom] = anchors.top_left,
+    [directions.top_left] = anchors.bottom_right,
+    [directions.top_right] = anchors.bottom_left,
+    [directions.bottom_left] = anchors.top_right,
+    [directions.bottom_right] = anchors.top_left,
+  }
+  ---@param direction WindowDirection
+  function direction_to_anchor(direction)
+    return direction_to_anchor_lut[direction]
   end
 end
 
 ---@param window_state WindowState
 ---@param anchor WindowAnchor
-local function get_anchor_y(window_state, anchor)
-  if bit32.band(anchor, directions.top) ~= 0 then
-    return window_state.location.y
-  else -- bottom
-    return window_state.location.y + window_state.size.height
-  end
+local function get_anchor_location_x(window_state, anchor)
+  return window_state.location.x + util.round(window_state.size.width * anchor.x)
 end
 
 ---@param window_state WindowState
 ---@param anchor WindowAnchor
-local function get_anchor(window_state, anchor)
+local function get_anchor_location_y(window_state, anchor)
+  return window_state.location.y + util.round(window_state.size.height * anchor.y)
+end
+
+---@param window_state WindowState
+---@param anchor WindowAnchor
+---@return GuiLocation
+local function get_anchor_location(window_state, anchor)
   return {
-    x = get_anchor_x(window_state, anchor),
-    y = get_anchor_y(window_state, anchor),
+    x = get_anchor_location_x(window_state, anchor),
+    y = get_anchor_location_y(window_state, anchor),
+  }
+end
+
+---@param anchor WindowAnchor
+---@return WindowAnchor
+local function get_opposite_anchor(anchor)
+  -- flip around 0.5 on both axis
+  return {
+    x = (anchor.x - 0.5) * -1 + 0.5,
+    y = (anchor.y - 0.5) * -1 + 0.5,
   }
 end
 
@@ -255,10 +315,13 @@ local function set_width(window_state, width, anchor)
   local scale = window_state.player.display_scale
   -- math.ceil because width should always be an integer
   width = math.max(width, math.ceil(window.minimal_size.width * scale))
-  if bit32.band(anchor, directions.right) ~= 0 then
-    window_state.location_before_rescale = nil
-    window_state.resolution_for_location_before_rescale = nil
-    window_state.location.x = get_anchor_x(window_state, anchor) - width
+  if anchor.x ~= 0 then
+    local diff = util.round(window_state.size.width * anchor.x - width * anchor.x)
+    if diff ~= 0 then
+      window_state.location_before_rescale = nil
+      window_state.resolution_for_location_before_rescale = nil
+      window_state.location.x = window_state.location.x + diff
+    end
   end
   window_state.size.width = width
 end
@@ -273,10 +336,13 @@ local function set_height(window_state, height, anchor)
   local scale = window_state.player.display_scale
   -- math.ceil because height should always be an integer
   height = math.max(height, math.ceil(window.minimal_size.height * scale))
-  if bit32.band(anchor, directions.bottom) ~= 0 then
-    window_state.location_before_rescale = nil
-    window_state.resolution_for_location_before_rescale = nil
-    window_state.location.y = get_anchor_y(window_state, anchor) - height
+  if anchor.y ~= 0 then
+    local diff = util.round(window_state.size.height * anchor.y - height * anchor.y)
+    if diff ~= 0 then
+      window_state.location_before_rescale = nil
+      window_state.resolution_for_location_before_rescale = nil
+      window_state.location.y = window_state.location.y + diff
+    end
   end
   window_state.size.height = height
 end
@@ -292,29 +358,40 @@ end
 ---@param window_state WindowState
 ---@param x integer
 ---@param anchor WindowAnchor
-local function set_width_from_location(window_state, x, anchor)
-  local width = get_anchor_x(window_state, anchor) - x
-  -- don't think about it too much, just consider the fact that it needs to be inverted for one side
-  width = width * get_horizontal_direction_multiplier(anchor)
+---@param direction WindowDirection
+local function set_width_from_location(window_state, x, anchor, direction)
+  local partial_width = x - get_anchor_location_x(window_state, anchor)
+  local width
+  if bit32.band(direction, directions.right) ~= 0 then
+    width = partial_width / get_opposite_anchor(anchor).x
+  else
+    width = (-partial_width) / anchor.x
+  end
   set_width(window_state, width, anchor)
 end
 
 ---@param window_state WindowState
 ---@param y integer
 ---@param anchor WindowAnchor
-local function set_height_from_location(window_state, y, anchor)
-  local height = get_anchor_y(window_state, anchor) - y
-  -- don't think about it too much, just consider the fact that it needs to be inverted for one side
-  height = height * get_vertical_direction_multiplier(anchor)
+---@param direction WindowDirection
+local function set_height_from_location(window_state, y, anchor, direction)
+  local partial_height = y - get_anchor_location_y(window_state, anchor)
+  local height
+  if bit32.band(direction, directions.bottom) ~= 0 then
+    height = partial_height / get_opposite_anchor(anchor).y
+  else
+    height = (-partial_height) / anchor.y
+  end
   set_height(window_state, height, anchor)
 end
 
 ---@param window_state WindowState
 ---@param location GuiLocation
 ---@param anchor WindowAnchor
-local function set_size_from_location(window_state, location, anchor)
-  set_width_from_location(window_state, location.x, anchor)
-  set_height_from_location(window_state, location.y, anchor)
+---@param direction WindowDirection
+local function set_size_from_location(window_state, location, anchor, direction)
+  set_width_from_location(window_state, location.x, anchor, direction)
+  set_height_from_location(window_state, location.y, anchor, direction)
 end
 
 ---@param window_state WindowState
@@ -322,10 +399,10 @@ end
 ---@param direction WindowDirection
 local function set_size_from_location_and_direction(window_state, location, direction)
   if bit32.band(direction, directions.left + directions.right) ~= 0 then
-    set_width_from_location(window_state, location.x, anchors_for_direction[direction])
+    set_width_from_location(window_state, location.x, direction_to_anchor(direction), direction)
   end
   if bit32.band(direction, directions.top + directions.bottom) ~= 0 then
-    set_height_from_location(window_state, location.y, anchors_for_direction[direction])
+    set_height_from_location(window_state, location.y, direction_to_anchor(direction), direction)
   end
 end
 
@@ -358,7 +435,7 @@ end
 ---this location is at the opposite side of the anchor
 ---@param anchor WindowAnchor
 local function set_location_x_from_location(window_state, x, anchor)
-  local current_x = get_anchor_x(window_state, opposite_anchors[anchor])
+  local current_x = get_anchor_location_x(window_state, get_opposite_anchor(anchor))
   local diff = x - current_x
   set_location_x(window_state, window_state.location.x + diff)
 end
@@ -368,7 +445,7 @@ end
 ---this location is at the opposite side of the anchor
 ---@param anchor WindowAnchor
 local function set_location_y_from_location(window_state, y, anchor)
-  local current_y = get_anchor_y(window_state, opposite_anchors[anchor])
+  local current_y = get_anchor_location_y(window_state, get_opposite_anchor(anchor))
   local diff = y - current_y
   set_location_y(window_state, window_state.location.y + diff)
 end
@@ -376,51 +453,55 @@ end
 ---@param window_state WindowState
 ---@param other WindowState
 local function overlapping_horizontally(window_state, other)
+  local get_x = get_anchor_location_x
   return not (
-    get_anchor_x(window_state, directions.right) <= get_anchor_x(other, directions.left)
-      or get_anchor_x(window_state, directions.left) >= get_anchor_x(other, directions.right)
+    get_x(window_state, anchors.top_right) <= get_x(other, anchors.top_left)
+      or get_x(window_state, anchors.top_left) >= get_x(other, anchors.top_right)
   )
 end
 
 ---@param window_state WindowState
 ---@param other WindowState
 local function overlapping_vertically(window_state, other)
+  local get_y = get_anchor_location_y
   return not (
-    get_anchor_y(window_state, directions.bottom) <= get_anchor_y(other, directions.top)
-      or get_anchor_y(window_state, directions.top) >= get_anchor_y(other, directions.bottom)
+    get_y(window_state, anchors.bottom_left) <= get_y(other, anchors.top_left)
+      or get_y(window_state, anchors.top_left) >= get_y(other, anchors.bottom_left)
   )
 end
 
 ---@param window_state WindowState
----@param get_anchor_xy function @ `get_anchor_x` or `get_anchor_y`. The axis to snap
----@param get_anchor_yx function @ `get_anchor_y` or `get_anchor_x`. The other axis
+---@param get_anchor_location_xy function @ `get_anchor_x` or `get_anchor_y`. The axis to snap
+---@param get_anchor_location_yx function @ `get_anchor_y` or `get_anchor_x`. The other axis
 ---@param overlapping function @ `overlapping_vertically` or `overlapping_horizontally`
 ---@param anchor WindowAnchor
----@param snap_to_location fun(window_state: WindowState, xy: integer, anchor: WindowAnchor) @
+---@param direction WindowDirection
+---@param snap_to_location fun(window_state: WindowState, xy: integer, anchor: WindowAnchor, direction: WindowDirection) @
 ---actual snap action. the anchor arg will be the same value as the anchor passed to this function.
 ---The xy value will be on the opposite side of the anchor
 ---@return boolean snapped @ returns true if it did snap or was already snapped
 local function snap_axis_internal(
   window_state,
-  get_anchor_xy,
-  get_anchor_yx,
+  get_anchor_location_xy,
+  get_anchor_location_yx,
   overlapping,
   anchor,
+  direction,
   snap_to_location
 )
-  local opposite_anchor = opposite_anchors[anchor]
+  local opposite_anchor = get_opposite_anchor(anchor)
   -- main axis
-  local this_anchor_xy = get_anchor_xy(window_state, opposite_anchor)
+  local this_anchor_xy = get_anchor_location_xy(window_state, opposite_anchor)
   -- other axis
-  local side_one_yx = get_anchor_yx(window_state, anchor)
-  local side_two_yx = get_anchor_yx(window_state, opposite_anchor)
+  local side_one_yx = get_anchor_location_yx(window_state, anchor)
+  local side_two_yx = get_anchor_location_yx(window_state, opposite_anchor)
   ---@param other_xy integer @ main axis of the other window
   local function try_snap_to(other_xy)
     if other_xy == this_anchor_xy then -- if it's touching, it's snapped already
       return true
     end
     if math.abs(other_xy - this_anchor_xy) <= 8 then -- not touching, but close. Snap to it
-      snap_to_location(window_state, other_xy, anchor)
+      snap_to_location(window_state, other_xy, anchor, direction)
       return true
     end
   end
@@ -428,13 +509,13 @@ local function snap_axis_internal(
   local function snap_to_window(other)
     if overlapping(window_state, other) then
       -- check if the other window's edge is touching - or close to - this window's opposite edge
-      if try_snap_to(get_anchor_xy(other, anchor)) then return true end
+      if try_snap_to(get_anchor_location_xy(other, anchor)) then return true end
     -- check if the other axis's edges are touching
-    elseif side_one_yx == get_anchor_yx(other, opposite_anchor)
-      or side_two_yx == get_anchor_yx(other, anchor)
+    elseif side_one_yx == get_anchor_location_yx(other, opposite_anchor)
+      or side_two_yx == get_anchor_location_yx(other, anchor)
     then
       -- perform the same snapping logic as before, but this time with the same window side
-      if try_snap_to(get_anchor_xy(other, opposite_anchor)) then return true end
+      if try_snap_to(get_anchor_location_xy(other, opposite_anchor)) then return true end
     end
   end
   local player = window_state.player
@@ -452,34 +533,38 @@ end
 
 ---@param window_state WindowState
 ---@param anchor WindowAnchor
+---@param direction WindowDirection
 ---@param snap_to_location fun(window_state: WindowState, x: integer, anchor: WindowAnchor) @
 ---actual snap action. the anchor arg will be the same value as the anchor passed to this function.
 ---The x value will be on the opposite side of the anchor
 ---@return boolean snapped @ returns true if it did snap or was already snapped
-local function snap_horizontally(window_state, anchor, snap_to_location)
+local function snap_horizontally(window_state, anchor, direction, snap_to_location)
   return snap_axis_internal(
     window_state,
-    get_anchor_x,
-    get_anchor_y,
+    get_anchor_location_x,
+    get_anchor_location_y,
     overlapping_vertically,
     anchor,
+    direction,
     snap_to_location
   )
 end
 
 ---@param window_state WindowState
 ---@param anchor WindowAnchor
+---@param direction WindowDirection
 ---@param snap_to_location fun(window_state: WindowState, y: integer, anchor: WindowAnchor) @
 ---actual snap action. the anchor arg will be the same value as the anchor passed to this function.
 ---The y value will be on the opposite side of the anchor
 ---@return boolean snapped @ returns true if it did snap or was already snapped
-local function snap_vertically(window_state, anchor, snap_to_location)
+local function snap_vertically(window_state, anchor, direction, snap_to_location)
   return snap_axis_internal(
     window_state,
-    get_anchor_y,
-    get_anchor_x,
+    get_anchor_location_y,
+    get_anchor_location_x,
     overlapping_horizontally,
     anchor,
+    direction,
     snap_to_location
   )
 end
@@ -487,12 +572,12 @@ end
 ---@param window_state WindowState
 local function snap_movement(window_state)
   local function snap_x()
-    return snap_horizontally(window_state, anchors.top_left, set_location_x_from_location)
-      or snap_horizontally(window_state, anchors.top_right, set_location_x_from_location)
+    return snap_horizontally(window_state, anchors.top_left, directions.right, set_location_x_from_location)
+      or snap_horizontally(window_state, anchors.top_right, directions.left, set_location_x_from_location)
   end
   local snapped_x = snap_x()
-  if (snap_vertically(window_state, anchors.top_left, set_location_y_from_location)
-      or snap_vertically(window_state, anchors.bottom_left, set_location_y_from_location)
+  if (snap_vertically(window_state, anchors.top_left, directions.bottom, set_location_y_from_location)
+      or snap_vertically(window_state, anchors.bottom_left, directions.top, set_location_y_from_location)
     )
     and not snapped_x
   then
@@ -505,14 +590,14 @@ end
 ---@param window_state WindowState
 ---@param direction WindowDirection
 local function snap_resize(window_state, direction)
-  local anchor = anchors_for_direction[direction]
+  local anchor = direction_to_anchor(direction)
   local function snap_x()
     return bit32.band(direction, directions.left + directions.right) ~= 0
-      and snap_horizontally(window_state, anchor, set_width_from_location)
+      and snap_horizontally(window_state, anchor, direction, set_width_from_location)
   end
   local snapped_x = snap_x()
   if bit32.band(direction, directions.top + directions.bottom) ~= 0
-    and snap_vertically(window_state, anchor, set_height_from_location)
+    and snap_vertically(window_state, anchor, direction, set_height_from_location)
     and not snapped_x
   then
     -- if y snapped, snap x again as long as x didn't already snap
@@ -1229,8 +1314,8 @@ local function on_player_display_resolution_changed(event)
     ---@cast resolution_for_size_before_rescale -nil
     local x_multiplier = (resolution.width / resolution_for_size_before_rescale.width)
     local y_multiplier = (resolution.height / resolution_for_size_before_rescale.height)
-    set_width(window_state, math.floor(0.5 + size.width * x_multiplier), anchors.top_left)
-    set_height(window_state, math.floor(0.5 + size.height * y_multiplier), anchors.top_left)
+    set_width(window_state, util.round(size.width * x_multiplier), anchors.top_left)
+    set_height(window_state, util.round(size.height * y_multiplier), anchors.top_left)
     window_state.size_before_rescale = size
     window_state.resolution_for_size_before_rescale = resolution_for_size_before_rescale
 
@@ -1240,8 +1325,8 @@ local function on_player_display_resolution_changed(event)
     ---@cast resolution_for_location_before_rescale -nil
     x_multiplier = (resolution.width / resolution_for_location_before_rescale.width)
     y_multiplier = (resolution.height / resolution_for_location_before_rescale.height)
-    set_location_x(window_state, math.floor(0.5 + location_before_rescale.x * x_multiplier))
-    set_location_y(window_state, math.floor(0.5 + location_before_rescale.y * y_multiplier))
+    set_location_x(window_state, util.round(location_before_rescale.x * x_multiplier))
+    set_location_y(window_state, util.round(location_before_rescale.y * y_multiplier))
     window_state.location_before_rescale = location_before_rescale
     window_state.resolution_for_location_before_rescale = resolution_for_location_before_rescale
 
@@ -1320,12 +1405,14 @@ return {
   directions = directions,
   get_horizontal_direction_multiplier = get_horizontal_direction_multiplier,
   get_vertical_direction_multiplier = get_vertical_direction_multiplier,
+  new_anchors = new_anchors,
   anchors = anchors,
-  opposite_anchors = opposite_anchors,
-  anchors_for_direction = anchors_for_direction,
-  get_anchor_x = get_anchor_x,
-  get_anchor_y = get_anchor_y,
-  get_anchor = get_anchor,
+  get_opposite_anchor = get_opposite_anchor,
+  direction_to_new_anchor = direction_to_new_anchor,
+  direction_to_anchor = direction_to_anchor,
+  get_anchor_location_x = get_anchor_location_x,
+  get_anchor_location_y = get_anchor_location_y,
+  get_anchor_location = get_anchor_location,
   set_width = set_width,
   set_height = set_height,
   set_size = set_size,
