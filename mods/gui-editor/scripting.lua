@@ -339,7 +339,7 @@ local function pre_compile(source, source_name)
   -- analyze
   local context = ast_walker.new_context(on_open, nil)
   result.context = context
-  -- context.validation_errors = nil
+  context.validation_errors = {}
   context.visited_index_nodes = {}
   context.input_variable_names = {}
   context.output_variable_names = {}
