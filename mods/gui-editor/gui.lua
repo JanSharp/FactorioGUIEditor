@@ -135,6 +135,9 @@ local function create_elem(parent_elem, args, elems)
   args.elem_mods = elem_mods
   args.events = events
   args.tags = tags
+  if tags then
+    tags.handlers = nil
+  end
   return elem, elems--[[@as table<string, LuaGuiElement>]]
 end
 
