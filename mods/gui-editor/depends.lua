@@ -18,7 +18,7 @@ local loading_modules = {}
 local results = {}
 
 local function depends_internal(module, allow_circular)
-  if results[module] then
+  if results[module] ~= nil then
     return results[module]
   end
 
@@ -43,12 +43,13 @@ local function depends_internal(module, allow_circular)
   loading_modules[module] = loading_results
   local result = real_require(module)
   loading_modules[module] = nil
+  results[module] = result
   if not loading_results[1] then
     return result
   end
 
   if type(result) ~= "table" then
-    error("Lazily loaded modules must return a table. module: '"..module.."'.")
+    error("Modules loaded using 'depends' must return a table. module: '"..module.."'.")
   end
   for _, loading_result in ipairs(loading_results) do
     setmetatable(loading_result, nil)
@@ -60,9 +61,9 @@ local function depends_internal(module, allow_circular)
   return result
 end
 
-if __DebugAdapter then
-  __DebugAdapter.defineGlobal("depends")
-end
+-- Factorio mod debugger support
+---@diagnostic disable-next-line: undefined-global
+if __DebugAdapter then __DebugAdapter.defineGlobal("depends") end
 
 ---@generic T
 ---@param module `T`
