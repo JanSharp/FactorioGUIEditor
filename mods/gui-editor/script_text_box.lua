@@ -737,8 +737,8 @@ local scroll_bar_size = 12
 ---@param line_count integer
 ---@return integer pixels
 local function calculate_text_box_height(stb_state, line_count)
-  local minimal_height = stb_state.minimal_size.height - scroll_bar_size
-  return math.max(line_count * char_height + tb_padding * 2, minimal_height)
+  -- local minimal_height = stb_state.minimal_size.height - scroll_bar_size
+  return line_count * char_height + tb_padding * 2 -- math.max(, minimal_height)
 end
 
 ---@param stb_state ScriptTextBoxState
@@ -766,11 +766,11 @@ local function update_sizes(stb_state)
   stb_state.last_line_length = last_line_length
   local height = calculate_text_box_height(stb_state, line_count)
   local line_numbers_lb_width, width = calculate_widths(stb_state, line_count, longest_line)
-  stb_state.flow.style.height = height
-  stb_state.tb_width = width
-  stb_state.main_tb.style.width = width
+  stb_state.tb_height = height
+  stb_state.main_tb.style.height = height
+  stb_state.colored_label.style.height = height
   stb_state.colored_label.style.width = width
-  stb_state.colored_label.style.left_margin = -width
+  stb_state.colored_label.style.top_margin = -height
   stb_state.line_numbers_lb.style.width = line_numbers_lb_width
   local line_numbers = {}
   local pattern = "%"..#tostring(line_count).."d"
@@ -820,13 +820,13 @@ local function set_ast(stb_state, ast, error_code_instances)
 
       local sprite_width = 8
       local sprite_height = 6
-      local y = tb_padding - sprite_height
-        + (error_code_instance.start_position.line or stb_state.line_count) * char_height
-      style.top_margin = y
-      local x = -stb_state.tb_width + tb_padding
+      local x = tb_padding - sprite_width
         + (error_code_instance.start_position.column or (stb_state.last_line_length + 1)) * char_width
-        - sprite_width
+      local y = -stb_state.tb_height + tb_padding
+        + (error_code_instance.start_position.line or stb_state.line_count) * char_height
+        - sprite_height
       style.left_margin = x
+      style.top_margin = y
       style.bottom_margin = -y - sprite_height
       style.right_margin = -x - sprite_width
     end
@@ -886,13 +886,11 @@ local function create(player, parent_elem, params)
   --       label (line numbers)
   --       line (separator)
   --       flow (vertical, variable height)
-  --         flow (horizontal, calculated height, calculated min height)
-  --           text-box (calculated width, calculated min width)
-  --           label (on top of text box, same size)
+  --         flow (vertical, variable size)
+  --           text-box (calculated height, horizontally stretchable)
+  --           label (on top of text box, same height)
   --           sprite(s) (margin shenanigans to position error indicators on top of text)
   --         empty-widget (stretch in both directions, focus text box on click)
-
-  -- TODO: change to vertical flow and allow horizontally_stretchable
 
   local frame, inner = gui.create_elem(parent_elem, {
     type = "frame",
@@ -900,21 +898,28 @@ local function create(player, parent_elem, params)
     style_mods = {
       maximal_width = params.maximal_size.width,
       maximal_height = params.maximal_size.height,
-      horizontally_stretchable = false,
+      -- minimal_width = 100,
+      horizontally_stretchable = true,
       vertically_stretchable = true,
-      horizontally_squashable = false,
+      horizontally_squashable = true,
     },
     children = {
       {
         type = "scroll-pane",
         style = "naked_scroll_pane",
+        style_mods = {
+          horizontally_squashable = true,
+        },
         vertical_scroll_policy = "auto-and-reserve-space",
         horizontal_scroll_policy = "auto-and-reserve-space",
         children = {
           {
             type= "flow",
             direction = "horizontal",
-            style_mods = {horizontal_spacing = 0},
+            style_mods = {
+              horizontal_spacing = 0,
+              horizontally_squashable = true,
+            },
             children = {
               {
                 type = "label",
@@ -944,11 +949,8 @@ local function create(player, parent_elem, params)
                   {
                     type = "flow",
                     name = "flow",
-                    direction = "horizontal",
-                    style_mods = {
-                      horizontal_spacing = 0,
-                      vertically_stretchable = false,
-                    },
+                    direction = "vertical",
+                    style_mods = {vertical_spacing = 0},
                     children = {
                       {
                         type = "text-box",
@@ -962,7 +964,8 @@ local function create(player, parent_elem, params)
                         style_mods = {
                           padding = 4,
                           maximal_width = 0,
-                          vertically_stretchable = true,
+                          horizontally_stretchable = true,
+                          width = 0,
                           font = "fira-code-light",
                           -- the cursor also seems to be using the font_color, so it has to be visible [...]
                           -- there might be a way to abuse rich text, but the text boxes should have rich
@@ -985,7 +988,6 @@ local function create(player, parent_elem, params)
                         style_mods = {
                           padding = 4,
                           maximal_width = 0,
-                          vertically_stretchable = true,
                           font = "fira-code-medium",
                           single_line = false,
                         },
