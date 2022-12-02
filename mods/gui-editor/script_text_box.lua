@@ -850,6 +850,16 @@ local on_script_text_box_text_changed = gui.register_handler(
   end
 )
 
+local on_script_text_box_bottom_widget_click = gui.register_handler(
+  "on_script_text_box_bottom_widget_click",
+  ---@param event EventData.on_gui_text_changed
+  function(player, tags, event)
+    local stb_state = player.stb_states_by_id[tags.stb_id]
+    stb_state.main_tb.select(#stb_state.text + 1, #stb_state.text)
+    stb_state.main_tb.focus()
+  end
+)
+
 ---@class CreateScriptTextBoxParams
 ---@field starting_text string?
 ---@field tooltip LocalisedString?
@@ -872,16 +882,17 @@ local function create(player, parent_elem, params)
   -- concept:
   -- frame (maximal size)
   --   scroll-pane (inherits size from content)
-  --     flow (horizontal, calculated height, calculated min height)
-  --       label
-  --       line
-  --       text-box (calculated width, calculated min width)
-  --       label (calculated width, calculated min width)
+  --     flow (horizontal, variable height)
+  --       label (line numbers)
+  --       line (separator)
+  --       flow (vertical, variable height)
+  --         flow (horizontal, calculated height, calculated min height)
+  --           text-box (calculated width, calculated min width)
+  --           label (on top of text box, same size)
+  --           sprite(s) (margin shenanigans to position error indicators on top of text)
+  --         empty-widget (stretch in both directions, focus text box on click)
 
   -- TODO: change to vertical flow and allow horizontally_stretchable
-  -- NOTE: to support vertically_stretchable try adding an empty widget at the bottom which when [...]
-  -- clicked `focus()`es the text box. It would be better if `select()` allows moving the cursor
-  -- to the end of the text box, which I assume it does, so yea do that instead of `focus()`
 
   local frame, inner = gui.create_elem(parent_elem, {
     type = "frame",
@@ -890,9 +901,8 @@ local function create(player, parent_elem, params)
       maximal_width = params.maximal_size.width,
       maximal_height = params.maximal_size.height,
       horizontally_stretchable = false,
-      vertically_stretchable = false,
+      vertically_stretchable = true,
       horizontally_squashable = false,
-      vertically_squashable = false,
     },
     children = {
       {
@@ -903,11 +913,8 @@ local function create(player, parent_elem, params)
         children = {
           {
             type= "flow",
-            name = "flow",
             direction = "horizontal",
-            style_mods = {
-              horizontal_spacing = 0,
-            },
+            style_mods = {horizontal_spacing = 0},
             children = {
               {
                 type = "label",
@@ -930,43 +937,70 @@ local function create(player, parent_elem, params)
                 },
               },
               {
-                type = "text-box",
-                name = "main_tb",
-                text = starting_text,
-                tooltip = params.tooltip,
-                elem_mods = {
-                  read_only = params.read_only,
-                },
-                style = "gui_editor_script_textbox",
-                style_mods = {
-                  padding = 4,
-                  maximal_width = 0,
-                  vertically_stretchable = true,
-                  font = "fira-code-light",
-                  -- the cursor also seems to be using the font_color, so it has to be visible [...]
-                  -- there might be a way to abuse rich text, but the text boxes should have rich
-                  -- text disabled. So instead use white font_color and make this textbox's font be
-                  -- lighter than the color label's font weight.
-                  font_color = {1, 1, 1, 1},
-                },
-                tags = tags,
-                events = {
-                  [defines.events.on_gui_text_changed] = {
-                    on_script_text_box_text_changed,
-                    params.on_text_changed,
+                type = "flow",
+                direction = "vertical",
+                style_mods = {vertical_spacing = 0},
+                children = {
+                  {
+                    type = "flow",
+                    name = "flow",
+                    direction = "horizontal",
+                    style_mods = {
+                      horizontal_spacing = 0,
+                      vertically_stretchable = false,
+                    },
+                    children = {
+                      {
+                        type = "text-box",
+                        name = "main_tb",
+                        text = starting_text,
+                        tooltip = params.tooltip,
+                        elem_mods = {
+                          read_only = params.read_only,
+                        },
+                        style = "gui_editor_script_textbox",
+                        style_mods = {
+                          padding = 4,
+                          maximal_width = 0,
+                          vertically_stretchable = true,
+                          font = "fira-code-light",
+                          -- the cursor also seems to be using the font_color, so it has to be visible [...]
+                          -- there might be a way to abuse rich text, but the text boxes should have rich
+                          -- text disabled. So instead use white font_color and make this textbox's font be
+                          -- lighter than the color label's font weight.
+                          font_color = {1, 1, 1, 1},
+                        },
+                        tags = tags,
+                        events = {
+                          [defines.events.on_gui_text_changed] = {
+                            on_script_text_box_text_changed,
+                            params.on_text_changed,
+                          },
+                        },
+                      },
+                      {
+                        type = "label",
+                        name = "colored_label",
+                        ignored_by_interaction = true,
+                        style_mods = {
+                          padding = 4,
+                          maximal_width = 0,
+                          vertically_stretchable = true,
+                          font = "fira-code-medium",
+                          single_line = false,
+                        },
+                      },
+                    },
                   },
-                },
-              },
-              {
-                type = "label",
-                name = "colored_label",
-                ignored_by_interaction = true,
-                style_mods = {
-                  padding = 4,
-                  maximal_width = 0,
-                  vertically_stretchable = true,
-                  font = "fira-code-medium",
-                  single_line = false,
+                  {
+                    type = "empty-widget",
+                    style_mods = {
+                      horizontally_stretchable = true,
+                      vertically_stretchable = true,
+                    },
+                    tags = {stb_id = stb_id},
+                    events = {[defines.events.on_gui_click] = on_script_text_box_bottom_widget_click},
+                  },
                 },
               },
             },
