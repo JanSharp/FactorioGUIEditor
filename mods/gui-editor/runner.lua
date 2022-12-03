@@ -52,7 +52,7 @@ end
 
 ---@param str string
 local function capitalize_words(str)
-  return str:gsub("%f[a-z](.)", char_to_upper_lut)
+  return str:gsub("%f[a-z](.)", char_to_upper_lut):gsub("_", " ")
 end
 
 ---@param entry RunnerListEntry
@@ -320,6 +320,7 @@ end
 local window_types = {
   "inspector",
   "hierarchy",
+  "script_editor",
 }
 table.sort(window_types)
 

@@ -57,6 +57,7 @@ global = {}
 ---| "hierarchy"
 ---| "inspector"
 ---| "runner"
+---| "script_editor"
 
 ---@class Window
 ---@field window_type WindowType @ unique identifier
@@ -163,7 +164,7 @@ global = {}
 ---@field main_tb LuaGuiElement
 ---@field colored_label LuaGuiElement
 ---@field line_numbers_lb LuaGuiElement
----@field tb_width integer
+---@field tb_height integer
 ---@field line_count integer
 ---@field last_line_length integer
 ---@field error_sprites LuaGuiElement[]
