@@ -10,3 +10,6 @@ This is relevant for the window manager because it has to handle all click event
 putting a script text box just in an empty window (frame, basically) for example makes the scroll pane that is in the script text box no longer work, as in the root frame of the script text box is not squashing, neither is the scroll pane inside of it. If you put the script text box inside of another scroll pane then the inner scroll pane suddenly starts working. basically:
 frame => frame => frame => scroll pane => weird combination of too large elements => doesn't squash
 frame => frame => scroll pane => frame => scroll pane => weird combination of too large elements => does squash!
+it seems to be related to when scroll bars are shown or hidden. The next thing I want to test as a way to reproduce it is having scroll pane => flow => (maybe a stretchable elem here) elem with fixed and too large size
+I think it's somehow related to that.
+However setting the horizontal scroll policy for the main script text box scroll pane to always and leaving vertical on auto is the best and least broken option. Now there's just a small range around when the horizontal scroll bar needs to show where it clips out horizontally, probably by up to 12 pixels (width of a scroll bar), but only when the vertical scroll bar is active

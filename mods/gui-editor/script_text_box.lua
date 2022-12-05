@@ -910,16 +910,12 @@ local function create(player, parent_elem, params)
         style_mods = {
           horizontally_squashable = true,
         },
-        vertical_scroll_policy = "auto-and-reserve-space",
-        horizontal_scroll_policy = "auto-and-reserve-space",
+        horizontal_scroll_policy = "always",
         children = {
           {
             type= "flow",
             direction = "horizontal",
-            style_mods = {
-              horizontal_spacing = 0,
-              horizontally_squashable = true,
-            },
+            style_mods = {horizontal_spacing = 0},
             children = {
               {
                 type = "label",
