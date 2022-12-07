@@ -125,6 +125,8 @@ local hardcoded_subclasses = {
     "frame",
     "label",
     "button",
+    "checkbox",
+    -- NOTE: maybe there are more elements that support captions and I'm ever so unaware
   },
   sprite = {
     "sprite-button",
