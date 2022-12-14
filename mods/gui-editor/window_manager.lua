@@ -1087,17 +1087,14 @@ local on_maximize_button_click = gui.register_handler(
       set_size(window_state, window_state.player.resolution, anchors.top_left)
       apply_location_and_size_changes(window_state)
       -- NOTE: with the addition of maximized flags this should also make the maximize button look pressed
+    elseif event.button == defines.mouse_button_type.middle then
+      set_location_y(window_state, 0)
+      set_height(window_state, window_state.player.resolution.height, anchors.top_left)
+      apply_location_and_size_changes(window_state)
     elseif event.button == defines.mouse_button_type.right then
-      if event.shift or event.alt then return end
-      if event.control then
-        set_location_x(window_state, 0)
-        set_width(window_state, window_state.player.resolution.width, anchors.top_left)
-        apply_location_and_size_changes(window_state)
-      else
-        set_location_y(window_state, 0)
-        set_height(window_state, window_state.player.resolution.height, anchors.top_left)
-        apply_location_and_size_changes(window_state)
-      end
+      set_location_x(window_state, 0)
+      set_width(window_state, window_state.player.resolution.width, anchors.top_left)
+      apply_location_and_size_changes(window_state)
     end
   end
 )
@@ -1165,6 +1162,7 @@ local function create_window_elements(window_state)
             sprite = "gui-editor-resize-white",
             hovered_sprite = "gui-editor-resize-black",
             clicked_sprite = "gui-editor-resize-black",
+            mouse_button_filter = {"left", "middle", "right"},
             tags = {window_id = window_state.id},
             events = {[defines.events.on_gui_click] = on_maximize_button_click},
           },
