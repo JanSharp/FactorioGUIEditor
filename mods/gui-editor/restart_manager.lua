@@ -23,7 +23,8 @@ local function on_tick(event)
 end
 
 ---@class __gui-editor__.restart_manager
-return {
+local result = {
   restart = restart,
   on_tick = on_tick,
 }
+return result

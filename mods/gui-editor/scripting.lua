@@ -16,7 +16,7 @@ local factorio_util = require("__core__.lualib.util")
 ---@type table<ScriptVariables, fun()>
 local compiled_value_lut = {}
 
----cSpell:ignore rcon
+---cSpell:ignore rcon, loadstring
 local fake_env = factorio_util.copy{
   -- _G = _G,
   assert = assert,
@@ -587,10 +587,11 @@ local function restore_variables(variables)
 end
 
 ---@class __gui-editor__.scripting
-return {
+local result = {
   create_script_variables = create_script_variables,
   pre_compile = pre_compile,
   compile_variables = compile_variables,
   restore_variables = restore_variables,
   is_builtin_global = is_builtin_global,
 }
+return result

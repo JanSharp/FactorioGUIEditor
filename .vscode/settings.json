@@ -57,31 +57,36 @@
     "mods/minimal-no-base-mod",
     "mods/JanSharpDevEnv",
   ],
+  "editor.rulers": [100],
+  "Lua.diagnostics.disable": [
+    "lowercase-global",
+    "missing-fields",
+  ],
+  "Lua.workspace.userThirdParty": [
+    "/home/jmpc4/.config/VSCodium/User/workspaceStorage/74acfc979cfb697b5dfbeb6fa369cc35/justarandomgeek.factoriomod-debug/sumneko-3rd",
+  ],
   "Lua.diagnostics.globals": [
-    "mods",
-    "table_size",
-    "log",
-    "localised_print",
-    "serpent",
-    "__DebugAdapter",
     "__Profiler",
-    "global"
+    "__DebugAdapter",
+    "data",
+    "default_font_color",
   ],
   "Lua.workspace.library": [
-    "/mnt/big/portable/factorio/data",
-    "/mnt/big/portable/factorio/data/core/lualib",
-    "/mnt/big/portable/factorio/doc-html/runtime-api-lua",
-    "mods/phobos/src", // NOTE: download the version of phobos as defined in the info.json, [...]
-    // put it in the `mods/` folder in this project and extract it. That way sumneko.lua can
-    // find all the type definitions for Phobos, like all the ast node types
+    "mods/phobos/src",
+    "/home/jmpc4/.config/VSCodium/User/workspaceStorage/74acfc979cfb697b5dfbeb6fa369cc35/justarandomgeek.factoriomod-debug/sumneko-3rd/factorio/library"
   ],
-  "Lua.runtime.pluginArgs": [
-    "--ignore",
-    "/mnt/big/portable/factorio/data/base/prototypes",
-    "/mnt/big/portable/factorio/data/core/prototypes",
-    "/mnt/big/portable/factorio/doc-html/runtime-api-lua",
-  ],
+  "Lua.runtime.builtin": {
+    "math": "disable",
+    "debug": "disable",
+    "coroutine": "disable",
+    "package": "disable",
+    // These are used in the fields list generator
+    // "io": "disable",
+    // "os": "disable",
+  },
   "Lua.runtime.version": "Lua 5.2",
-  "Lua.runtime.plugin": "/home/jmpc4/dev/FactorioSumnekoLuaPlugin/FactorioSumnekoLuaPlugin/plugin.lua",
-  "editor.rulers": [100],
+  "Lua.runtime.special": {
+    "__object_name": "type"
+  },
+  "Lua.runtime.plugin": "/home/jmpc4/.config/VSCodium/User/workspaceStorage/74acfc979cfb697b5dfbeb6fa369cc35/justarandomgeek.factoriomod-debug/sumneko-3rd/factorio/plugin.lua",
 }

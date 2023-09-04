@@ -226,7 +226,7 @@ for _, field in pairs(fields) do
 end
 
 ---@class __gui-editor__.util
-return {
+local result = {
   gui_elem_types = gui_elem_types,
   gui_elem_type_flags = gui_elem_type_flags,
   fields_for_type = fields_for_type,
@@ -238,3 +238,4 @@ return {
   remove_from_array = remove_from_array,
   round = round,
 }
+return result

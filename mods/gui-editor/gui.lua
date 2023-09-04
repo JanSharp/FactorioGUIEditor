@@ -142,7 +142,7 @@ local function create_elem(parent_elem, args, elems)
 end
 
 ---@class __gui-editor__.gui
-return {
+local result = {
   register_handler = register_handler,
   try_get_tags = try_get_tags,
   handle_gui_event = handle_gui_event,
@@ -150,3 +150,4 @@ return {
   register_for_all_gui_events = register_for_all_gui_events,
   create_elem = create_elem,
 }
+return result

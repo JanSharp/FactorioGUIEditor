@@ -232,7 +232,8 @@ local function create_inspector(player)
 end
 
 ---@class __gui-editor__.inspector
-return {
+local result = {
   update_inspectors = update_inspectors,
   create_inspector = create_inspector,
 }
+return result

@@ -391,9 +391,10 @@ window_manager.on_display_title_changed(function(window_state)
 end)
 
 ---@class __gui-editor__.runner
-return {
+local result = {
   activate_runner = activate_runner,
   add_search_term = add_search_term,
   remove_search_term = remove_search_term,
   init_player = init_player,
 }
+return result

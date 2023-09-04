@@ -35,7 +35,9 @@ window_manager.register_window{
       -- },
     })
     local main_elem = inner and inner.scroll_pane or shallow_frame
-    window_state.stb = script_text_box.create(window_state.player, main_elem, {
+    -- NOTE: the reference to the created stb should probably be stored on window_state once [...]
+    -- it's all properly implemented.
+    script_text_box.create(window_state.player, main_elem, {
       minimal_size = {width = 100, height = 100},
       maximal_size = {width = 2000, height = 0--[[340]]},
     })

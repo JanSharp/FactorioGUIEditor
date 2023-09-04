@@ -371,7 +371,8 @@ local function create_hierarchy(player)
 end
 
 ---@class __gui-editor__.hierarchy
-return {
+local result = {
   update_hierarchies = update_hierarchies,
   create_hierarchy = create_hierarchy,
 }
+return result

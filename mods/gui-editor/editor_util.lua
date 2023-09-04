@@ -72,7 +72,7 @@ local function create_mixed_values_label(parent_elem, editor_state, use_black_fo
     ignored_by_interaction = true,
     style_mods = {
       font = "default-semibold",
-      font_color = use_black_font and {0, 0, 0} or nil,
+      font_color = use_black_font and {0, 0, 0} or (nil)--[[@as Color]],
     },
   })
 end
@@ -434,7 +434,7 @@ local function create_optional_switch(parent_elem, editor_state)
 end
 
 ---@class __gui-editor__.editor_util
-return {
+local result = {
   editors = editors,
   add_editor = add_editor,
   get_editor = get_editor,
@@ -451,3 +451,4 @@ return {
   write_display_value_to_gui = write_display_value_to_gui,
   on_editor_gui_event = on_editor_gui_event,
 }
+return result

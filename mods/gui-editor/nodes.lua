@@ -299,7 +299,7 @@ local function delete_node(player, node, leave_dirty)
 end
 
 ---@class __gui-editor__.nodes
-return {
+local result = {
   is_root = is_root,
   is_child_of = is_child_of,
   create_node = create_node,
@@ -315,3 +315,4 @@ return {
   move_node = move_node,
   delete_node = delete_node,
 }
+return result

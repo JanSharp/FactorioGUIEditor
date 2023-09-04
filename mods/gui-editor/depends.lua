@@ -1,3 +1,4 @@
+---@meta
 
 -- Even though this file replaces the require function, it does not change its behavior.
 -- `depends` however behaves slightly differently in that it allows circular references by

@@ -1505,7 +1505,7 @@ local function init_player(player)
 end
 
 ---@class __gui-editor__.window_manager
-return {
+local result = {
   on_window_created = on_window_created,
   on_window_closed = on_window_closed,
   on_display_title_changed = on_display_title_changed,
@@ -1563,3 +1563,4 @@ return {
   on_load = on_load,
   init_player = init_player,
 }
+return result

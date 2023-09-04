@@ -1039,9 +1039,10 @@ local function init_player(player)
 end
 
 ---@class __gui-editor__.script_text_box
-return {
+local result = {
   set_text = set_text,
   set_ast = set_ast,
   create = create,
   init_player = init_player,
 }
+return result
