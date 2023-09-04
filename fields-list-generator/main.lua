@@ -14,8 +14,8 @@ local contents = file:read("*a")
 assert(file:close())
 
 local docs = json.decode(contents)
-if docs.api_version ~= 3 then
-  io.stderr:write("Can only read docs with api_version 3, got "..docs.api_version..".")
+if docs.api_version ~= 3 and docs.api_version ~= 4 then
+  io.stderr:write("Can only read docs with api_version 3 or 4, got "..docs.api_version..".\n")
   os.exit(false)
 end
 
