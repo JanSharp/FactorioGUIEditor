@@ -9,7 +9,7 @@ public class Program
     public static void Main()
     {
         ///cSpell:ignore jmpc4
-        ProcessStartInfo startInfo = new("/mnt/big/portable/factorio/bin/x64/factorio")
+        ProcessStartInfo startInfo = new("/home/jmpc4/dev/factorio_mod_dev/bin/x64/factorio")
         {
             ArgumentList = {
                 "",
@@ -25,7 +25,7 @@ public class Program
         do
         {
             restarting = false;
-            if (File.Exists("/mnt/big/portable/factorio/saves/_autosave-gui-editor.zip"))
+            if (File.Exists("/home/jmpc4/dev/factorio_mod_dev/saves/_autosave-gui-editor.zip"))
             {
                 startInfo.ArgumentList[0] = "--load-game";
                 startInfo.ArgumentList[1] = "_autosave-gui-editor";

@@ -46,7 +46,7 @@
       "request": "launch",
       "preLaunchTask": "build launcher",
       // If you have changed target frameworks, make sure to update the program path.
-      "program": "${workspaceFolder}/gui-editor-launcher/bin/Debug/net6.0/gui-editor-launcher.dll",
+      "program": "${workspaceFolder}/gui-editor-launcher/bin/Debug/net7.0/gui-editor-launcher.dll",
       "args": [],
       "cwd": "${workspaceFolder}/gui-editor-launcher",
       // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
