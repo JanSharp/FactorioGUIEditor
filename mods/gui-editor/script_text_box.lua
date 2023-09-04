@@ -3,6 +3,7 @@ local gui = require("__gui-editor__.gui")
 local scripting = depends("__gui-editor__.scripting")
 local util = require("__gui-editor__.util")
 local error_code_util = require("__phobos__.error_code_util")
+local parser = require("__phobos__.parser")
 
 -- this is the formatter from Phobos with a few modifications to insert [color] rich text tags
 
@@ -780,15 +781,6 @@ local function update_sizes(stb_state)
   stb_state.line_numbers_lb.caption = table.concat(line_numbers, "\n")
 end
 
----updates the text for `main_tb`
----@param stb_state ScriptTextBoxState
----@param text string
-local function set_text(stb_state, text)
-  stb_state.text = text
-  stb_state.main_tb.text = text
-  update_sizes(stb_state)
-end
-
 ---updates the text for `colored_label`
 ---@param stb_state ScriptTextBoxState
 ---@param ast AstMain
@@ -838,15 +830,30 @@ local function set_ast(stb_state, ast, error_code_instances)
   end
 end
 
--- TODO: perform all parsing logic in the script text box, including displaying errors
+---@param stb_state ScriptTextBoxState
+---@param text string
+local function set_text_internal(stb_state, text)
+  stb_state.text = text
+  update_sizes(stb_state)
+  ---@type AstMain, ErrorCodeInstance[]
+  local ast, syntax_errors = parser(text, "=(--TODO: some source name)")
+  set_ast(stb_state, ast, syntax_errors)
+end
+
+---updates the text for `main_tb`
+---@param stb_state ScriptTextBoxState
+---@param text string
+local function set_text(stb_state, text)
+  stb_state.main_tb.text = text
+  set_text_internal(stb_state, text)
+end
 
 local on_script_text_box_text_changed = gui.register_handler(
   "on_script_text_box_text_changed",
   ---@param event EventData.on_gui_text_changed
   function(player, tags, event)
     local stb_state = player.stb_states_by_id[tags.stb_id]
-    stb_state.text = stb_state.main_tb.text
-    update_sizes(stb_state)
+    set_text_internal(stb_state, stb_state.main_tb.text)
   end
 )
 
