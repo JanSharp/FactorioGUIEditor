@@ -1,38 +1,6 @@
 
 require("__gui-editor__.depends")
 
-if __DebugAdapter then
-  __DebugAdapter.dumpIgnore{
-    "@__phobos__/lib/LuaArgParser/arg_parser.lua",
-    "@__phobos__/lib/LuaArgParser/classes.lua",
-    "@__phobos__/lib/serpent.lua",
-    "@__phobos__/optimize/create_inline_iife.lua",
-    "@__phobos__/optimize/fold_const.lua",
-    "@__phobos__/optimize/fold_control_statements.lua",
-    "@__phobos__/ast_util.lua",
-    "@__phobos__/ast_walker.lua",
-    "@__phobos__/build_profile_arg_provider.lua",
-    "@__phobos__/classes.lua",
-    "@__phobos__/compiler.lua",
-    "@__phobos__/constants.lua",
-    "@__phobos__/control.lua",
-    "@__phobos__/disassembler.lua",
-    "@__phobos__/dump.lua",
-    "@__phobos__/error_code_util.lua",
-    "@__phobos__/formatter.lua",
-    "@__phobos__/il_pretty_print.lua",
-    "@__phobos__/indexed_linked_list.lua",
-    "@__phobos__/intermediate_language.lua",
-    "@__phobos__/jump_linker.lua",
-    "@__phobos__/nodes.lua",
-    "@__phobos__/opcode_util.lua",
-    "@__phobos__/parser.lua",
-    "@__phobos__/stack.lua",
-    "@__phobos__/tokenize.lua",
-    "@__phobos__/util.lua",
-  }
-end
-
 local util = require("__gui-editor__.util")
 local ll = require("__gui-editor__.linked_list")
 local gui = require("__gui-editor__.gui")
